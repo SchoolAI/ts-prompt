@@ -1,0 +1,120 @@
+{
+  "$schema": "https://biomejs.dev/schemas/1.5.3/schema.json",
+  "vcs": {
+    "root": ".",
+    "enabled": true,
+    "clientKind": "git"
+  },
+  "files": {
+    "include": [
+      "./**/*.ts",
+      "./**/*.js",
+      "./**/*.cjs",
+      "./**/*.mjs",
+      "./**/*.jsx",
+      "./**/*.tsx",
+      "./**/*.d.ts",
+      "./**/*.json",
+      "./**/*.jsonc"
+    ],
+    "ignore": [
+      "./__tests__",
+      "./**/node_modules",
+      "./**/dist",
+      "./**/out-tsc",
+      "./extension/dist",
+      "src/types/*",
+      "src/generated/*",
+      "src/**/generated*"
+    ],
+    "ignoreUnknown": true
+  },
+  "organizeImports": {
+    "enabled": false
+  },
+  "formatter": {
+    "enabled": true,
+    "lineWidth": 80,
+    "indentWidth": 2,
+    "indentStyle": "space",
+    "formatWithErrors": true
+  },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "a11y": {
+        "useButtonType": "off",
+        "useValidAnchor": "off",
+        "noSvgWithoutTitle": "off",
+        "noHeaderScope": "off",
+        "noBlankTarget": "off",
+        "noNoninteractiveTabindex": "off",
+        "useValidAriaRole": "off",
+        "useIframeTitle": "off",
+        "useMediaCaption": "off",
+        "useKeyWithClickEvents": "off",
+        "useKeyWithMouseEvents": "off"
+      },
+      "complexity": {
+        "noBannedTypes": "off",
+        "noForEach": "off"
+      },
+      "correctness": {
+        "noUnreachable": "off",
+        "noUnnecessaryContinue": "off",
+        "noUnusedImports": "warn"
+      },
+      "performance": {
+        "noDelete": "off",
+        "noAccumulatingSpread": "off"
+      },
+      "security": {
+        "noDangerouslySetInnerHtml": "off"
+      },
+      "style": {
+        "useSelfClosingElements": "off",
+        "noUnusedTemplateLiteral": "off",
+        "noNonNullAssertion": "off",
+        "useTemplate": "off",
+        "noParameterAssign": "off",
+        "noUselessElse": "off",
+        "noInferrableTypes": "off",
+        "noVar": "off",
+        "useExponentiationOperator": "off",
+        "useDefaultParameterLast": "off",
+        "useSingleVarDeclarator": "off",
+        "useImportType": "off",
+        "useNodejsImportProtocol": "off",
+        "useNumberNamespace": "off"
+      },
+      "suspicious": {
+        "noConsoleLog": "error",
+        "noExplicitAny": "off",
+        "noGlobalIsNan": "off",
+        "noDoubleEquals": "off",
+        "noConfusingVoidType": "off",
+        "noAssignInExpressions": "off",
+        "noImplicitAnyLet": "off",
+        "noArrayIndexKey": "off",
+        "noRedeclare": "off",
+        "noPrototypeBuiltins": "off"
+      }
+    }
+  },
+  "javascript": {
+    "parser": {
+      "unsafeParameterDecoratorsEnabled": true
+    },
+    "formatter": {
+      "enabled": true,
+      "bracketSpacing": true,
+      "quoteStyle": "single",
+      "trailingComma": "all",
+      "semicolons": "asNeeded",
+      "jsxQuoteStyle": "double",
+      "quoteProperties": "asNeeded",
+      "arrowParentheses": "asNeeded"
+    }
+  }
+}
