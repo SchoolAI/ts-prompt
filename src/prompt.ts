@@ -5,7 +5,7 @@ import {
   ChatSystemMessage,
   ModelConfigBase,
 } from './types'
-import { IfNever, Template } from './template'
+import { ExtractParams, IfNever, Template } from './template'
 import { Instruction, createInstruction } from './instruction'
 import { stringToJsonSchema } from './json'
 
@@ -103,7 +103,7 @@ export const createPromptWithInstruction = <
 
 export const createPrompt = <
   M extends ModelConfigBase,
-  P extends string,
+  S extends string,
   Z extends ZodType<any, ZodObjectDef>,
 >({
   getChatCompletion,
@@ -114,13 +114,15 @@ export const createPrompt = <
 }: {
   getChatCompletion: GetChatCompletionFn<M>
   config: M
-  template: Template<P>
+  template: S
   returns?: Z
   joinTimeline?: JoinTimelineFn
-}) => {
-  const instruction = createInstruction<M, P, Z>({
+}): Z extends ZodUndefined
+  ? BasePrompt<M, ExtractParams<S>>
+  : JsonPrompt<M, ExtractParams<S>, z.infer<Z>> => {
+  const instruction = createInstruction<M, ExtractParams<S>, Z>({
     config,
-    template,
+    template: Template.build(template),
     returns,
   })
   return createPromptWithInstruction(

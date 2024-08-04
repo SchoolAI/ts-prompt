@@ -23,7 +23,7 @@ describe('Prompt', () => {
     const prompt = createPrompt({
       getChatCompletion,
       config: getDefaultConfig(),
-      template: Template.build(`hello`),
+      template: `hello`,
       returns: undefined,
     })
 
@@ -35,7 +35,7 @@ describe('Prompt', () => {
     const prompt = createPrompt({
       getChatCompletion, // just for testing
       config: getDefaultConfig(),
-      template: Template.build(`hello`),
+      template: `hello`,
       returns: z.object({ value: z.boolean() }),
     })
 
@@ -43,11 +43,26 @@ describe('Prompt', () => {
     expect(json.value).toBe(true)
   })
 
+  test('createPrompt with placeholder', async () => {
+    const prompt = createPrompt({
+      getChatCompletion, // just for testing
+      config: getDefaultConfig(),
+      template: `hello {{target}}`,
+      returns: z.object({ value: z.boolean() }),
+    })
+
+    const json = await prompt.requestJson({
+      timeline: [],
+      params: { target: 'world' },
+    })
+    expect(json.value).toBe(true)
+  })
+
   test('getCompletion', () => {
     const prompt = createPromptWithInstruction(
       createInstruction({
         config: getDefaultConfig(),
-        template: Template.build(`hello {{world}}`),
+        template: Template.build(`hello {{target}}`),
         returns: z.object({}),
       }),
       undefined,
@@ -55,7 +70,7 @@ describe('Prompt', () => {
     )
 
     expect(
-      prompt.requestCompletion({ timeline: [], params: { world: 'there' } }),
+      prompt.requestCompletion({ timeline: [], params: { target: 'there' } }),
     )
   })
 })
