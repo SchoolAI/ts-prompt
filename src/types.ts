@@ -93,6 +93,9 @@ export const chatCompletionSchema = z.object({
 export interface ModelConfigBase
   extends z.infer<typeof modelConfigBaseSchema> {}
 export const modelConfigBaseSchema = z.object({
+  // Response format expected of the model
+  responseFormat: z.enum(['natural', 'json']).optional(),
+
   // Model parameters
   temperature: z.number().optional(),
   seed: z.number().optional(),
@@ -115,9 +118,6 @@ export const chatRequestSchema = <M extends ModelConfigBase>(
 
     // Message history to send as part of the chat request
     messages: z.array(chatMessageSchema).default([]),
-
-    // Response format expected of the model
-    responseFormat: z.enum(['natural', 'json']).default('natural'),
   })
 
 // // The prompt project ID (originally Humanloop project ID)

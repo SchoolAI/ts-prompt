@@ -39,7 +39,7 @@ describe('Prompt', () => {
       returns: z.object({ value: z.boolean() }),
     })
 
-    const json = await prompt.requestJson([])
+    const json = await prompt.requestJson({ timeline: [] })
     expect(json.value).toBe(true)
   })
 
@@ -54,6 +54,8 @@ describe('Prompt', () => {
       getChatCompletion,
     )
 
-    expect(prompt.requestCompletion([], { world: 'there' }))
+    expect(
+      prompt.requestCompletion({ timeline: [], params: { world: 'there' } }),
+    )
   })
 })
