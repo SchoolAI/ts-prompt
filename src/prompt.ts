@@ -110,27 +110,24 @@ export const createPrompt = <
   Z extends ZodType<any, ZodObjectDef>,
   AIClient,
 >({
-  getDefaultConfig,
   getChatCompletion,
-  template,
   config,
+  template,
   returns,
   joinTimeline = (systemEvent, timeline) => [systemEvent, ...timeline],
 }: {
-  getDefaultConfig: () => M
   getChatCompletion: (
     ai: AIClient,
     request: ChatRequest<M>,
   ) => Promise<ChatCompletion>
+  config: M
   template: Template<P>
   returns?: Z
-  config?: M
   joinTimeline?: JoinTimelineFn
 }) => {
   const instruction = createInstruction<P, M, Z>({
-    getDefaultConfig,
-    template,
     config,
+    template,
     returns,
   })
   return createPromptWithInstruction(

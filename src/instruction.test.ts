@@ -13,7 +13,7 @@ const getDefaultConfig = (): ModelConfig => ({
 describe('createInstruction', () => {
   test('called with Template', () => {
     const inst = createInstruction({
-      getDefaultConfig,
+      config: getDefaultConfig(),
       template: Template.build(`hello {{world}}`),
     })
 
@@ -22,9 +22,8 @@ describe('createInstruction', () => {
 
   test('merges modelConfig with defaults', () => {
     const inst = createInstruction({
-      getDefaultConfig,
+      config: { ...getDefaultConfig(), temperature: 0.7 },
       template: Template.build(''),
-      config: { temperature: 0.7 },
     })
 
     expect(inst.config.provider).toEqual('openai')
@@ -33,7 +32,7 @@ describe('createInstruction', () => {
 
   test('`returns` and renders zod schema', () => {
     const inst = createInstruction({
-      getDefaultConfig,
+      config: getDefaultConfig(),
       template: Template.build(
         'Based on the conversation so far, determine if the user has musical talent.',
       ),

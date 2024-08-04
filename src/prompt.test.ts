@@ -23,8 +23,8 @@ const ai = {} as any
 describe('Prompt', () => {
   test('createPrompt that `returns` nothing has no `requestJson`', async () => {
     const prompt = createPrompt({
-      getDefaultConfig,
       getChatCompletion,
+      config: getDefaultConfig(),
       template: Template.build(`hello`),
       returns: undefined,
     })
@@ -35,8 +35,8 @@ describe('Prompt', () => {
 
   test('createPrompt with value returned', async () => {
     const prompt = createPrompt({
-      getDefaultConfig,
       getChatCompletion, // just for testing
+      config: getDefaultConfig(),
       template: Template.build(`hello`),
       returns: z.object({ value: z.boolean() }),
     })
@@ -48,7 +48,7 @@ describe('Prompt', () => {
   test('getCompletion', () => {
     const prompt = createPromptWithInstruction(
       createInstruction({
-        getDefaultConfig,
+        config: getDefaultConfig(),
         template: Template.build(`hello {{world}}`),
         returns: z.object({}),
       }),

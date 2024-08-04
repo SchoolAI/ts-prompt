@@ -25,14 +25,12 @@ export const createInstruction = <
   M extends ModelConfigBase,
   Z extends ZodType<any, ZodObjectDef>,
 >({
-  getDefaultConfig,
   template,
   config,
   returns,
 }: {
-  getDefaultConfig: () => M
   template: Template<P>
-  config?: Partial<M>
+  config: M
   returns?: Z | undefined
 }): Instruction<P, M, Z> => {
   return {
@@ -46,7 +44,7 @@ export const createInstruction = <
           Template.build(makeJsonTemplateString(returns)) as Template<''>,
         )
       : template,
-    config: { ...getDefaultConfig(), ...config },
+    config,
     returns,
   }
 }
