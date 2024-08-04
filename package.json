@@ -21,7 +21,9 @@
     "lint:fix": "biome check --apply ./src"
   },
   "tsup": {
-    "entry": ["src/index.ts"],
+    "entry": [
+      "src/index.ts"
+    ],
     "splitting": false,
     "sourcemap": true,
     "clean": true
@@ -32,7 +34,7 @@
     "humanloop": "0.6.8",
     "openai": "^4.29.0",
     "zod": "^3.23.8",
-    "zod-to-ts": "^1.2.0"
+    "zod-to-json-schema": "^3.23.2"
   },
   "devDependencies": {
     "@biomejs/biome": "^1.8.1",

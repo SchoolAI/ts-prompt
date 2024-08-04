@@ -1,41 +1,40 @@
 import unindent from '@nrsk/unindent'
 import { ZodObjectDef, ZodType } from 'zod'
-import { zodToTs, printNode } from 'zod-to-ts'
+import { zodToJsonSchema } from 'zod-to-json-schema'
 import { Template, combineTemplates } from './template'
-import { ModelConfig } from './types'
+import { ModelConfigBase } from './types'
 
-export type Instruction<P extends string, Z extends ZodType<any, any>> = {
+export type Instruction<
+  P extends string,
+  M extends ModelConfigBase,
+  Z extends ZodType<any, any>,
+> = {
   template: Template<P>
-  modelConfig: ModelConfig
+  config: M
   returns: Z | undefined
-}
-
-const INSTRUCTION_DEFAULT_MODEL_CONFIG: ModelConfig = {
-  provider: 'openai',
-  model: 'gpt-3.5-turbo',
-  topP: 1,
-  temperature: 0.2,
-  responseFormat: 'json',
 }
 
 const makeJsonTemplateString = (schema: ZodType<any, any>) =>
   unindent(`
     You must return the result as a JSON object. The result must strictly adhere to
-    the following typescript schema:\n
-  `) + printNode(zodToTs(schema, 'JsonReturn').node)
+    the following JSON schema:\n
+  `) + JSON.stringify(zodToJsonSchema(schema), null, 2)
 
 export const createInstruction = <
   P extends string,
+  M extends ModelConfigBase,
   Z extends ZodType<any, ZodObjectDef>,
 >({
+  getDefaultConfig,
   template,
-  modelConfig,
+  config,
   returns,
 }: {
+  getDefaultConfig: () => M
   template: Template<P>
-  modelConfig?: Partial<ModelConfig>
+  config?: Partial<M>
   returns?: Z | undefined
-}): Instruction<P, Z> => {
+}): Instruction<P, M, Z> => {
   return {
     template: returns
       ? combineTemplates(
@@ -47,7 +46,7 @@ export const createInstruction = <
           Template.build(makeJsonTemplateString(returns)) as Template<''>,
         )
       : template,
-    modelConfig: { ...INSTRUCTION_DEFAULT_MODEL_CONFIG, ...modelConfig },
+    config: { ...getDefaultConfig(), ...config },
     returns,
   }
 }

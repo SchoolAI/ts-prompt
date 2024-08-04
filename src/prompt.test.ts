@@ -4,6 +4,12 @@ import { createPrompt, createPromptWithInstruction } from './prompt'
 import { createInstruction } from './instruction'
 import { Template } from './template'
 import { ChatCompletion } from './types'
+import { ModelConfig } from './__tests__/types'
+
+const getDefaultConfig = (): ModelConfig => ({
+  provider: 'openai',
+  model: 'gpt-3.5-turbo',
+})
 
 const completion: ChatCompletion = {
   message: { role: 'assistant', content: '{"value": true}' },
@@ -17,6 +23,8 @@ const ai = {} as any
 describe('Prompt', () => {
   test('createPrompt that `returns` nothing has no `requestJson`', async () => {
     const prompt = createPrompt({
+      getDefaultConfig,
+      getChatCompletion,
       template: Template.build(`hello`),
       returns: undefined,
     })
@@ -27,9 +35,10 @@ describe('Prompt', () => {
 
   test('createPrompt with value returned', async () => {
     const prompt = createPrompt({
+      getDefaultConfig,
+      getChatCompletion, // just for testing
       template: Template.build(`hello`),
       returns: z.object({ value: z.boolean() }),
-      getChatCompletion, // just for testing
     })
 
     const json = await prompt.requestJson(ai, [])
@@ -39,6 +48,7 @@ describe('Prompt', () => {
   test('getCompletion', () => {
     const prompt = createPromptWithInstruction(
       createInstruction({
+        getDefaultConfig,
         template: Template.build(`hello {{world}}`),
         returns: z.object({}),
       }),

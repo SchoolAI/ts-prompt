@@ -1,36 +1,15 @@
-import { z } from 'zod'
+import { ZodType, z } from 'zod'
 
-const toolTypeSchema = z.literal('function')
-
-export type FunctionTool = z.infer<typeof functionToolSchema>
-export const functionToolSchema = z.object({
-  name: z.string(),
-  // TODO(duane): make arguments non-optional--only humanloop thinks its optional, openai doesn't
-  arguments: z.string().optional(),
-})
-
-export type ToolCall = z.infer<typeof toolCallSchema>
-export const toolCallSchema = z.object({
-  id: z.string(),
-  type: toolTypeSchema,
-  function: functionToolSchema,
-})
-
-export type ChatRole = z.infer<typeof chatRoleSchema>
-export const chatRoleSchema = z.enum(['user', 'assistant', 'system', 'tool'])
-
-export type ChatMessageImageAttachment = z.infer<
-  typeof chatMessageImageAttachmentSchema
->
+export interface ChatMessageImageAttachment
+  extends z.infer<typeof chatMessageImageAttachmentSchema> {}
 export const chatMessageImageAttachmentSchema = z.object({
   type: z.literal('image'), // consider adding more types such as 'video', 'audio', 'file'
   title: z.string(),
-  imageUrl: z.string(), // this is the cloudflare R2 URL
+  imageUrl: z.string(),
 })
 
-export type ChatMessageDocumentAttachment = z.infer<
-  typeof chatMessageImageAttachmentSchema
->
+export interface ChatMessageDocumentAttachment
+  extends z.infer<typeof chatMessageImageAttachmentSchema> {}
 export const chatMessageDocumentAttachmentSchema = z.object({
   type: z.literal('document'),
   title: z.string(),
@@ -42,17 +21,64 @@ export const chatMessageAttachmentSchema = z.discriminatedUnion('type', [
   chatMessageDocumentAttachmentSchema,
 ])
 
-export type ChatMessage = z.infer<typeof chatMessageSchema>
-export const chatMessageSchema = z.object({
-  role: chatRoleSchema,
-  content: z.string(),
-  attachments: z.array(chatMessageAttachmentSchema).nullish(),
-  name: z.string().nullish(),
-  tool_call_id: z.string().nullish(),
-  tool_calls: z.array(toolCallSchema).nullish(),
+export interface ToolCall extends z.infer<typeof toolCallSchema> {}
+export const toolCallSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  arguments: z.string(),
 })
 
-export type ChatCompletion = z.infer<typeof chatCompletionSchema>
+export interface ChatSystemMessage
+  extends z.infer<typeof chatSystemMessageSchema> {}
+export const chatSystemMessageSchema = z.object({
+  role: z.literal('system'),
+  name: z.string().optional(),
+  content: z.string(),
+})
+
+export interface ChatAssistantMessage
+  extends z.infer<typeof chatAssistantMessageSchema> {}
+export const chatAssistantMessageSchema = z.object({
+  role: z.literal('assistant'),
+  name: z.string().optional(),
+  content: z.string(),
+})
+
+export interface ChatUserMessage
+  extends z.infer<typeof chatUserMessageSchema> {}
+export const chatUserMessageSchema = z.object({
+  role: z.literal('user'),
+  name: z.string().optional(),
+  content: z.string(),
+  attachments: z.array(chatMessageAttachmentSchema).optional(),
+})
+
+export type ChatToolMessage = z.infer<typeof chatToolMessageSchema>
+export const chatToolMessageSchema = z.object({
+  role: z.literal('tool'),
+  name: z.string().nullish(),
+  toolCallId: z.string().nullish(),
+  toolCalls: z.array(toolCallSchema).nullish(),
+})
+
+export type ChatMessage = z.infer<typeof chatMessageSchema>
+export const chatMessageSchema = z.discriminatedUnion('role', [
+  chatSystemMessageSchema,
+  chatAssistantMessageSchema,
+  chatUserMessageSchema,
+  chatToolMessageSchema,
+])
+
+// Extract roles, i.e. system, assistant, user, tool
+const chatMessageRoleLiterals = chatMessageSchema.options.map(
+  o => o.shape.role.value,
+)
+export const chatRoleSchema = z.enum([
+  chatMessageRoleLiterals[0]!,
+  ...chatMessageRoleLiterals.slice(1),
+])
+
+export interface ChatCompletion extends z.infer<typeof chatCompletionSchema> {}
 export const chatCompletionSchema = z.object({
   // The completion message made by a model
   message: chatMessageSchema,
@@ -64,66 +90,52 @@ export const chatCompletionSchema = z.object({
   tokens: z.number().optional(),
 })
 
+export interface ModelConfigBase
+  extends z.infer<typeof modelConfigBaseSchema> {}
 export const modelConfigBaseSchema = z.object({
-  // Response format expected of the model
-  responseFormat: z.enum(['natural', 'json']).default('natural'),
-
   // Model parameters
-  stop: z.string().optional(),
-  seed: z.number().optional(),
-  frequencyPenalty: z.number().optional(),
   temperature: z.number().optional(),
+  seed: z.number().optional(),
+  stop: z.string().optional(),
   topP: z.number().optional(),
+  maxTokens: z.number().optional(),
+  frequencyPenalty: z.number().optional(),
 })
 
-export type ModelConfig = z.infer<typeof modelConfigSchema>
-export const modelConfigSchema = z.discriminatedUnion('provider', [
-  z
-    .object({
-      provider: z.literal('openai'),
-      model: z.enum(['gpt-3.5-turbo']),
-    })
-    .merge(modelConfigBaseSchema),
-])
+export interface ChatRequest<M extends ModelConfigBase>
+  extends Omit<z.infer<ReturnType<typeof chatRequestSchema>>, 'config'> {
+  config: M
+}
+export const chatRequestSchema = <M extends ModelConfigBase>(
+  modelConfigSchema: ZodType<M>,
+) =>
+  z.object({
+    // Message history to send as part of the chat request
+    messages: z.array(chatMessageSchema).default([]),
 
-export type ChatRequest = z.infer<typeof chatRequestSchema>
-export const chatRequestSchema = z.object({
-  // Message history to send as part of the chat request
-  messages: z.array(chatMessageSchema),
+    // Optional tracking of which user made the request
+    userId: z.string().optional(),
 
-  // ModelConfig, including model and parameters
-  modelConfig: modelConfigSchema,
+    config: modelConfigSchema,
 
-  // The prompt project ID (originally Humanloop project ID)
-  projectId: z.string().optional(),
+    // Response format expected of the model
+    responseFormat: z.enum(['natural', 'json']).default('natural'),
+  })
 
-  // If the modelConfig's template has placeholders, we need inputs to interpolate into those placeholders
-  inputs: z.record(z.string()).optional(),
+// // ModelConfig, including model and parameters
+// modelConfig: modelConfigSchema,
 
-  // Number of tokens in the request messages
-  tokens: z.number().optional(),
+// // The prompt project ID (originally Humanloop project ID)
+// projectId: z.string().optional(),
 
-  // Equivalent to Humanloop's session_reference_id
-  traceId: z.string().optional(),
+// // If the modelConfig's template has placeholders, we need inputs to interpolate into those placeholders
+// inputs: z.record(z.string()).optional(),
 
-  // Identifies where the model was called from
-  source: z.enum(['space']).optional(),
+// // Number of tokens in the request messages
+// tokens: z.number().optional(),
 
-  // Optional tracking of which user made the request
-  userId: z.string().optional(),
+// // Equivalent to Humanloop's session_reference_id
+// traceId: z.string().optional(),
 
-  // Optional ability to set the tool choice
-  toolChoice: z
-    .union([
-      z.literal('auto'),
-      z.literal('required'),
-      z.object({
-        type: z.literal('function'),
-        function: z.object({
-          name: z.string(),
-        }),
-      }),
-      z.literal('none'),
-    ])
-    .optional(),
-})
+// // Identifies where the model was called from
+// source: z.enum(['space']).optional(),

@@ -1,11 +1,19 @@
 import { describe, test, expect } from 'vitest'
+import unindent from '@nrsk/unindent'
 import { createInstruction } from './instruction'
 import { z } from 'zod'
 import { Template } from './template'
+import { ModelConfig } from './__tests__/types'
+
+const getDefaultConfig = (): ModelConfig => ({
+  provider: 'openai',
+  model: 'gpt-3.5-turbo',
+})
 
 describe('createInstruction', () => {
   test('called with Template', () => {
     const inst = createInstruction({
+      getDefaultConfig,
       template: Template.build(`hello {{world}}`),
     })
 
@@ -14,16 +22,18 @@ describe('createInstruction', () => {
 
   test('merges modelConfig with defaults', () => {
     const inst = createInstruction({
+      getDefaultConfig,
       template: Template.build(''),
-      modelConfig: { temperature: 0.7 },
+      config: { temperature: 0.7 },
     })
 
-    expect(inst.modelConfig.provider).toEqual('openai')
-    expect(inst.modelConfig.temperature).toEqual(0.7)
+    expect(inst.config.provider).toEqual('openai')
+    expect(inst.config.temperature).toEqual(0.7)
   })
 
   test('`returns` and renders zod schema', () => {
     const inst = createInstruction({
+      getDefaultConfig,
       template: Template.build(
         'Based on the conversation so far, determine if the user has musical talent.',
       ),
@@ -40,11 +50,21 @@ describe('createInstruction', () => {
     expect(inst.template.render()).toEqual(
       'Based on the conversation so far, determine if the user has musical talent.\n' +
         'You must return the result as a JSON object. The result must strictly adhere to\n' +
-        'the following typescript schema:\n\n' +
-        '{\n' +
-        '    /** whether or not the user appears to be gifted with musical talent */\n' +
-        '    hasMusicalTalent: boolean;\n' +
-        '}',
+        'the following JSON schema:\n\n' +
+        unindent(`{
+          "type": "object",
+          "properties": {
+            "hasMusicalTalent": {
+              "type": "boolean",
+              "description": "whether or not the user appears to be gifted with musical talent"
+            }
+          },
+          "required": [
+            "hasMusicalTalent"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        }`),
     )
   })
 })
