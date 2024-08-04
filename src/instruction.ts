@@ -5,12 +5,12 @@ import { Template, combineTemplates } from './template'
 import { ModelConfigBase } from './types'
 
 export type Instruction<
-  P extends string,
   M extends ModelConfigBase,
+  P extends string,
   Z extends ZodType<any, any>,
 > = {
-  template: Template<P>
   config: M
+  template: Template<P>
   returns: Z | undefined
 }
 
@@ -21,19 +21,20 @@ const makeJsonTemplateString = (schema: ZodType<any, any>) =>
   `) + JSON.stringify(zodToJsonSchema(schema), null, 2)
 
 export const createInstruction = <
-  P extends string,
   M extends ModelConfigBase,
+  P extends string,
   Z extends ZodType<any, ZodObjectDef>,
 >({
-  template,
   config,
+  template,
   returns,
 }: {
-  template: Template<P>
   config: M
+  template: Template<P>
   returns?: Z | undefined
-}): Instruction<P, M, Z> => {
+}): Instruction<M, P, Z> => {
   return {
+    config,
     template: returns
       ? combineTemplates(
           template,
@@ -44,7 +45,6 @@ export const createInstruction = <
           Template.build(makeJsonTemplateString(returns)) as Template<''>,
         )
       : template,
-    config,
     returns,
   }
 }

@@ -37,12 +37,12 @@ export type JsonPrompt<P extends string, T, AIClient> = BasePrompt<
 
 export const createPromptWithInstruction = <
   T,
-  P extends string,
   M extends ModelConfigBase,
+  P extends string,
   Z extends ZodType<T, ZodObjectDef>,
   AIClient,
 >(
-  instruction: Instruction<P, M, Z>,
+  instruction: Instruction<M, P, Z>,
   joinTimeline: JoinTimelineFn = (systemEvent, timeline) => [
     systemEvent,
     ...timeline,
@@ -105,8 +105,8 @@ export const createPromptWithInstruction = <
 }
 
 export const createPrompt = <
-  P extends string,
   M extends ModelConfigBase,
+  P extends string,
   Z extends ZodType<any, ZodObjectDef>,
   AIClient,
 >({
@@ -125,7 +125,7 @@ export const createPrompt = <
   returns?: Z
   joinTimeline?: JoinTimelineFn
 }) => {
-  const instruction = createInstruction<P, M, Z>({
+  const instruction = createInstruction<M, P, Z>({
     config,
     template,
     returns,
