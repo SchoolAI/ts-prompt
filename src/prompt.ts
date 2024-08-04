@@ -16,23 +16,18 @@ import { stringToJsonSchema } from './json'
 //
 // If the prompt templat has ANY placeholders, then the request requires the third arg,
 // `params`, to be passed.
-type PromptRequestArgs<P extends string, AIClient> = IfNever<
+type PromptRequestArgs<P extends string> = IfNever<
   P,
-  [ai: AIClient, timeline: ChatMessage[]],
-  [ai: AIClient, timeline: ChatMessage[], params: { [key in P]: string }]
+  [timeline: ChatMessage[]],
+  [timeline: ChatMessage[], params: { [key in P]: string }]
 >
-export type BasePrompt<P extends string, AIClient> = {
-  requestCompletion: (
-    ...args: PromptRequestArgs<P, AIClient>
-  ) => Promise<ChatCompletion>
-  requestContent: (...args: PromptRequestArgs<P, AIClient>) => Promise<string>
+export type BasePrompt<P extends string> = {
+  requestCompletion: (...args: PromptRequestArgs<P>) => Promise<ChatCompletion>
+  requestContent: (...args: PromptRequestArgs<P>) => Promise<string>
 }
 
-export type JsonPrompt<P extends string, T, AIClient> = BasePrompt<
-  P,
-  AIClient
-> & {
-  requestJson: (...args: PromptRequestArgs<P, AIClient>) => Promise<T>
+export type JsonPrompt<P extends string, T> = BasePrompt<P> & {
+  requestJson: (...args: PromptRequestArgs<P>) => Promise<T>
 }
 
 export const createPromptWithInstruction = <
@@ -40,22 +35,16 @@ export const createPromptWithInstruction = <
   M extends ModelConfigBase,
   P extends string,
   Z extends ZodType<T, ZodObjectDef>,
-  AIClient,
 >(
   instruction: Instruction<M, P, Z>,
   joinTimeline: JoinTimelineFn = (systemEvent, timeline) => [
     systemEvent,
     ...timeline,
   ],
-  getChatCompletion: (
-    ai: AIClient,
-    request: ChatRequest<M>,
-  ) => Promise<ChatCompletion>,
-): Z extends ZodUndefined
-  ? BasePrompt<P, AIClient>
-  : JsonPrompt<P, z.infer<Z>, AIClient> => {
+  getChatCompletion: (request: ChatRequest<M>) => Promise<ChatCompletion>,
+): Z extends ZodUndefined ? BasePrompt<P> : JsonPrompt<P, z.infer<Z>> => {
   const requestCompletion = async (
-    ...[ai, timeline, params]: PromptRequestArgs<P, AIClient>
+    ...[timeline, params]: PromptRequestArgs<P>
   ) => {
     const systemEvent: ChatMessage = {
       role: 'system',
@@ -70,10 +59,10 @@ export const createPromptWithInstruction = <
       responseFormat: 'natural',
     }
 
-    return await getChatCompletion(ai, request)
+    return await getChatCompletion(request)
   }
 
-  const requestContent = async (...args: PromptRequestArgs<P, AIClient>) => {
+  const requestContent = async (...args: PromptRequestArgs<P>) => {
     const completion = await requestCompletion(...args)
 
     if (completion.message.role === 'assistant') {
@@ -84,7 +73,7 @@ export const createPromptWithInstruction = <
   }
 
   const requestJson = async (
-    ...args: PromptRequestArgs<P, AIClient>
+    ...args: PromptRequestArgs<P>
   ): Promise<Z extends z.ZodNever ? never : z.infer<Z>> => {
     const content = await requestContent(...args)
     return stringToJsonSchema
@@ -92,23 +81,20 @@ export const createPromptWithInstruction = <
       .parse(content)
   }
 
-  const base: BasePrompt<P, AIClient> = {
+  const base: BasePrompt<P> = {
     requestCompletion: requestCompletion,
     requestContent: requestContent,
   }
 
   return (
     instruction.returns ? { ...base, requestJson } : base
-  ) as Z extends ZodUndefined
-    ? BasePrompt<P, AIClient>
-    : JsonPrompt<P, z.infer<Z>, AIClient>
+  ) as Z extends ZodUndefined ? BasePrompt<P> : JsonPrompt<P, z.infer<Z>>
 }
 
 export const createPrompt = <
   M extends ModelConfigBase,
   P extends string,
   Z extends ZodType<any, ZodObjectDef>,
-  AIClient,
 >({
   getChatCompletion,
   config,
@@ -116,10 +102,7 @@ export const createPrompt = <
   returns,
   joinTimeline = (systemEvent, timeline) => [systemEvent, ...timeline],
 }: {
-  getChatCompletion: (
-    ai: AIClient,
-    request: ChatRequest<M>,
-  ) => Promise<ChatCompletion>
+  getChatCompletion: (request: ChatRequest<M>) => Promise<ChatCompletion>
   config: M
   template: Template<P>
   returns?: Z

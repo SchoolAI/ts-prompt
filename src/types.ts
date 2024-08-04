@@ -110,20 +110,15 @@ export const chatRequestSchema = <M extends ModelConfigBase>(
   modelConfigSchema: ZodType<M>,
 ) =>
   z.object({
+    // ModelConfig, potentially including model and parameters
+    config: modelConfigSchema,
+
     // Message history to send as part of the chat request
     messages: z.array(chatMessageSchema).default([]),
-
-    // Optional tracking of which user made the request
-    userId: z.string().optional(),
-
-    config: modelConfigSchema,
 
     // Response format expected of the model
     responseFormat: z.enum(['natural', 'json']).default('natural'),
   })
-
-// // ModelConfig, including model and parameters
-// modelConfig: modelConfigSchema,
 
 // // The prompt project ID (originally Humanloop project ID)
 // projectId: z.string().optional(),

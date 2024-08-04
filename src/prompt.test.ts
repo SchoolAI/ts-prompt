@@ -18,8 +18,6 @@ const completion: ChatCompletion = {
 
 const getChatCompletion = async () => completion
 
-const ai = {} as any
-
 describe('Prompt', () => {
   test('createPrompt that `returns` nothing has no `requestJson`', async () => {
     const prompt = createPrompt({
@@ -41,7 +39,7 @@ describe('Prompt', () => {
       returns: z.object({ value: z.boolean() }),
     })
 
-    const json = await prompt.requestJson(ai, [])
+    const json = await prompt.requestJson([])
     expect(json.value).toBe(true)
   })
 
@@ -56,6 +54,6 @@ describe('Prompt', () => {
       getChatCompletion,
     )
 
-    expect(prompt.requestCompletion(ai, [], { world: 'there' }))
+    expect(prompt.requestCompletion([], { world: 'there' }))
   })
 })
