@@ -28,7 +28,7 @@ export type JsonPrompt<
   requestJson: (args: PromptRequestArgs<M, P>) => Promise<T>
 }
 
-type GetChatCompletionFn<M extends ModelConfigBase> = (
+export type GetChatCompletionFn<M extends ModelConfigBase> = (
   messages: ChatMessage[],
   config: M,
 ) => Promise<ChatCompletion>
@@ -101,36 +101,41 @@ export const createPromptWithInstruction = <
   ) as Z extends ZodUndefined ? BasePrompt<M, P> : JsonPrompt<M, P, z.infer<Z>>
 }
 
-export const createPrompt = <
-  M extends ModelConfigBase,
-  S extends string,
-  Z extends ZodType<any, ZodObjectDef>,
->({
-  getChatCompletion,
-  config,
-  template,
-  returns,
-  joinTimeline = (systemEvent, timeline) => [systemEvent, ...timeline],
-}: {
-  getChatCompletion: GetChatCompletionFn<M>
-  config: M
-  template: S
-  returns?: Z
-  joinTimeline?: JoinTimelineFn
-}): Z extends ZodUndefined
-  ? BasePrompt<M, ExtractParams<S>>
-  : JsonPrompt<M, ExtractParams<S>, z.infer<Z>> => {
-  const instruction = createInstruction<M, ExtractParams<S>, Z>({
+/**
+ * `initPrompt` is a factory function. It should be used once to create a function (e.g.
+ * 'mkPrompt') that creates prompts. Pass it a function that returns completions, and a default
+ * config, and it will return a function that expects a prompt template, and optionally config
+ * overrides and a zod schema for the return
+ * value.
+ */
+export const initPrompt =
+  <M extends ModelConfigBase>(
+    getChatCompletion: GetChatCompletionFn<M>,
+    defaultConfig: M,
+  ) =>
+  <S extends string, Z extends ZodType<any, ZodObjectDef>>({
     config,
-    template: Template.build(template),
+    template,
     returns,
-  })
-  return createPromptWithInstruction(
-    instruction,
-    joinTimeline,
-    getChatCompletion,
-  )
-}
+    joinTimeline = (systemEvent, timeline) => [systemEvent, ...timeline],
+  }: {
+    config?: M
+    template: S
+    returns?: Z
+    joinTimeline?: JoinTimelineFn
+  }): Z extends ZodUndefined
+    ? BasePrompt<M, ExtractParams<S>>
+    : JsonPrompt<M, ExtractParams<S>, z.infer<Z>> => {
+    return createPromptWithInstruction(
+      createInstruction<M, ExtractParams<S>, Z>({
+        config: { ...defaultConfig, ...config },
+        template: Template.build(template),
+        returns,
+      }),
+      joinTimeline,
+      getChatCompletion,
+    )
+  }
 
 export type JoinTimelineFn = (
   systemEvent: ChatMessage,

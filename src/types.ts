@@ -42,6 +42,7 @@ export const chatAssistantMessageSchema = z.object({
   role: z.literal('assistant'),
   name: z.string().optional(),
   content: z.string(),
+  toolCalls: z.array(toolCallSchema).optional(),
 })
 
 export interface ChatUserMessage
@@ -57,6 +58,7 @@ export type ChatToolMessage = z.infer<typeof chatToolMessageSchema>
 export const chatToolMessageSchema = z.object({
   role: z.literal('tool'),
   name: z.string().nullish(),
+  content: z.string().nullish(),
   toolCallId: z.string().nullish(),
   toolCalls: z.array(toolCallSchema).nullish(),
 })
@@ -119,18 +121,3 @@ export const chatRequestSchema = <M extends ModelConfigBase>(
     // Message history to send as part of the chat request
     messages: z.array(chatMessageSchema).default([]),
   })
-
-// // The prompt project ID (originally Humanloop project ID)
-// projectId: z.string().optional(),
-
-// // If the modelConfig's template has placeholders, we need inputs to interpolate into those placeholders
-// inputs: z.record(z.string()).optional(),
-
-// // Number of tokens in the request messages
-// tokens: z.number().optional(),
-
-// // Equivalent to Humanloop's session_reference_id
-// traceId: z.string().optional(),
-
-// // Identifies where the model was called from
-// source: z.enum(['space']).optional(),

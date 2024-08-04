@@ -1,15 +1,15 @@
 import { describe, test, expect } from 'vitest'
 import { z } from 'zod'
-import { createPrompt, createPromptWithInstruction } from './prompt'
+import { initPrompt, createPromptWithInstruction } from './prompt'
 import { createInstruction } from './instruction'
 import { Template } from './template'
 import { ChatCompletion } from './types'
 import { ModelConfig } from './__tests__/types'
 
-const getDefaultConfig = (): ModelConfig => ({
+const defaultConfig: ModelConfig = {
   provider: 'openai',
   model: 'gpt-3.5-turbo',
-})
+}
 
 const completion: ChatCompletion = {
   message: { role: 'assistant', content: '{"value": true}' },
@@ -18,11 +18,11 @@ const completion: ChatCompletion = {
 
 const getChatCompletion = async () => completion
 
+const mkPrompt = initPrompt(getChatCompletion, defaultConfig)
+
 describe('Prompt', () => {
   test('createPrompt that `returns` nothing has no `requestJson`', async () => {
-    const prompt = createPrompt({
-      getChatCompletion,
-      config: getDefaultConfig(),
+    const prompt = mkPrompt({
       template: `hello`,
       returns: undefined,
     })
@@ -32,9 +32,7 @@ describe('Prompt', () => {
   })
 
   test('createPrompt with value returned', async () => {
-    const prompt = createPrompt({
-      getChatCompletion, // just for testing
-      config: getDefaultConfig(),
+    const prompt = mkPrompt({
       template: `hello`,
       returns: z.object({ value: z.boolean() }),
     })
@@ -44,9 +42,7 @@ describe('Prompt', () => {
   })
 
   test('createPrompt with placeholder', async () => {
-    const prompt = createPrompt({
-      getChatCompletion, // just for testing
-      config: getDefaultConfig(),
+    const prompt = mkPrompt({
       template: `hello {{target}}`,
       returns: z.object({ value: z.boolean() }),
     })
@@ -61,7 +57,7 @@ describe('Prompt', () => {
   test('getCompletion', () => {
     const prompt = createPromptWithInstruction(
       createInstruction({
-        config: getDefaultConfig(),
+        config: defaultConfig,
         template: Template.build(`hello {{target}}`),
         returns: z.object({}),
       }),
