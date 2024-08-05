@@ -1,6 +1,8 @@
 import { z } from 'zod'
 import { modelConfigBaseSchema } from '../types'
 
+import type { OpenAI } from 'openai'
+
 import type {
   ChatCompletion as OpenAIChatCompletion,
   ChatCompletionMessageParam as OpenAIChatCompletionMessageParam,
@@ -15,6 +17,26 @@ export const modelConfigSchema = z.discriminatedUnion('provider', [
     })
     .merge(modelConfigBaseSchema),
 ])
+
+export const initOpenAIGetChatCompletion =
+  (openai: OpenAI): GetChatCompletionFn<ModelConfig> =>
+  async (messages, config) => {
+    const openAiCompletion = await openai.chat.completions.create({
+      messages: chatMessagesToOpenAIChatMessages(messages),
+      model: config.model,
+      frequency_penalty: config.frequencyPenalty,
+      temperature: config.temperature,
+      stop: config.stop,
+      seed: config.seed,
+      response_format: responseFormatToOpenAIResponseFormat(
+        config.responseFormat ?? 'natural',
+      ),
+      top_p: config.topP,
+
+      stream: false,
+    })
+    return openAIChatCompletionToChatCompletion(openAiCompletion)
+  }
 
 // export type {
 //   ChatCompletion as OpenAIChatCompletion,
@@ -34,6 +56,7 @@ export const modelConfigSchema = z.discriminatedUnion('provider', [
 
 // import { Moderation } from 'openai/resources/moderations.mjs'
 import { ChatCompletion, ChatMessage } from '../types'
+import { GetChatCompletionFn } from '../prompt'
 
 // export type OpenAIModerationResult = Moderation
 // export type OpenAIModerationCategories = keyof Moderation.Categories

@@ -4,7 +4,7 @@ import { initPrompt, createPromptWithInstruction } from './prompt'
 import { createInstruction } from './instruction'
 import { Template } from './template'
 import { ChatCompletion } from './types'
-import { ModelConfig } from './__tests__/types'
+import { ModelConfig } from './openai'
 
 const defaultConfig: ModelConfig = {
   provider: 'openai',

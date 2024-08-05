@@ -3,7 +3,7 @@ import unindent from '@nrsk/unindent'
 import { createInstruction } from './instruction'
 import { z } from 'zod'
 import { Template } from './template'
-import { ModelConfig } from './__tests__/types'
+import { ModelConfig } from './openai'
 
 const getDefaultConfig = (): ModelConfig => ({
   provider: 'openai',
