@@ -110,7 +110,7 @@
       "enabled": true,
       "bracketSpacing": true,
       "quoteStyle": "single",
-      "trailingComma": "all",
+      "trailingCommas": "all",
       "semicolons": "asNeeded",
       "jsxQuoteStyle": "double",
       "quoteProperties": "asNeeded",
