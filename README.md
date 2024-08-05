@@ -13,25 +13,37 @@ placeholders in the prompt template and create type consistency across the codeb
 ## Example
 
 ```typescript
-// Note: the `prompt` object below has type `Prompt<"language">` and enforces that all requests
-// (e.g. `requestJson` below) pass in a `language` parameter. It also enforces that the response
-// from the LLM is a JSON object that `returns` the correct shape and types, parsed by the zod
-// schema provided. The result is guaranteed to be typed correctly (or an error will be thrown).
+// inferred type:
+//
+// JsonPrompt<ModelConfig, "language", {
+//     name: string | null;
+//     subject: string | null;
+//     duration: string | null;
+//     keyTopics: string[];
+//     targetAudience: string | null;
+// }>
 const prompt = mkPrompt({
   template: `
-    You are an educational consultant. Extract the course or lesson name, subject, duration, key topics, and target audience. If information is not available, do not make up details--instead,
-    report as null (or empty array if appropriate).
+    You are an educational consultant. Extract the course or lesson name, subject, duration,
+    key topics, and target audience. If information is not available, do not make up details--
+    instead, report as null (or empty array if appropriate).
 
     Record your findings in the natural language {{language}}.
   `,
   returns: z.object({
-    name: z.string().nullable().description('The name of the course or lesson.'),
-    subject: z.string().nullable().description('The subject of the course or lesson.'),
-    duration: z.string().nullable().description('The duration of the course or lesson.'),
-    keyTopics: z.array(z.string()).description('The key topics covered in the course or lesson.'),
-    targetAudience: z.string().nullable().description('The target audience for the course or lesson.'),
+    name: z.string().nullable().describe('The name of the course or lesson.'),
+    subject: z.string().nullable().describe('The subject of the course or lesson.'),
+    duration: z.string().nullable().describe('The duration of the course or lesson.'),
+    keyTopics: z.array(z.string()).describe('The key topics covered in the course or lesson.'),
+    targetAudience: z.string().nullable().describe('The target audience for the course or lesson.'),
   }),
 })
+
+// Note: the `prompt` object above has type `Prompt<"language">` and enforces that all
+// requests (e.g. `requestJson` below) pass in a `language` parameter. It also enforces
+// that the response from the LLM is a JSON object that `returns` the correct shape and
+// types, parsed by the zod schema provided. The result is guaranteed to be typed
+// correctly (or an error will be thrown).
 
 // Request the AI to provide a response
 const details = await prompt.requestJson({
@@ -92,7 +104,7 @@ const mkPrompt = initPrompt(getChatCompletion, {
 You can create your own `getChatCompletion` function if you want to use a different inference
 engine, or if you need special logging, tracking, retry logic, etc.
 
-In addition, while the default OpenAI getChatCompletion and mkPrompt functions use a suggested
-`ModelConfig` type to describe the model parameters, you can create your own type as long as
+In addition, while the default OpenAI `getChatCompletion` and `mkPrompt` functions use a suggested
+`ModelConfig` type to describe the model parameters, you can create your own type as long as it
 extends `ModelConfigBase`. This can be useful if, for example, you need more parameters for your
 model or need to pass individualized information like userId.
