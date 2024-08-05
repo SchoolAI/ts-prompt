@@ -1,7 +1,7 @@
-import unindent from '@nrsk/unindent'
 import { ZodObjectDef, ZodType } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { Template, combineTemplates } from './template'
+import { unindent } from './unindent'
 import { ModelConfigBase } from './types'
 
 export type Instruction<

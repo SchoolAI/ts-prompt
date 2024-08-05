@@ -1,4 +1,4 @@
-import unindent from '@nrsk/unindent'
+import { unindent } from './unindent'
 
 // Define a utility type that finds all curly-brace placeholders within a string and returns
 // them as a union type.

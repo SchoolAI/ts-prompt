@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import unindent from '@nrsk/unindent'
+import { unindent } from './unindent'
 import { createInstruction } from './instruction'
 import { z } from 'zod'
 import { Template } from './template'

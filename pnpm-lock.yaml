@@ -5,9 +5,6 @@ settings:
   excludeLinksFromLockfile: false
 
 dependencies:
-  '@nrsk/unindent':
-    specifier: ^1.0.0
-    version: 1.0.0
   zod:
     specifier: ^3.23.8
     version: 3.23.8
@@ -401,11 +398,6 @@ packages:
       '@nodelib/fs.scandir': 2.1.5
       fastq: 1.17.1
     dev: true
-
-  /@nrsk/unindent@1.0.0:
-    resolution: {integrity: sha512-3/+f7dMDXFGfp+7qYAsuAGg8NH7opxP7tSTXRITkjDJQ2sTwk7psdB9bNzFFdgLyx+L+vIv32OrN5QjeEi+sQw==}
-    engines: {node: ^14.16.0 || ^16.10.0 || ^18.0.0}
-    dev: false
 
   /@pkgjs/parseargs@0.11.0:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
