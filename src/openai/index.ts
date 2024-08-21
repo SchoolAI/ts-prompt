@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { modelConfigBaseSchema } from '../types'
 
 import type { OpenAI } from 'openai'
 
@@ -10,16 +9,20 @@ import type {
 
 export interface ModelConfig extends z.infer<typeof modelConfigSchema> {}
 export const modelConfigSchema = z.discriminatedUnion('provider', [
-  z
-    .object({
-      provider: z.literal('openai'),
-      model: z.enum(['gpt-3.5-turbo']),
-    })
-    .merge(modelConfigBaseSchema),
+  z.object({
+    provider: z.literal('openai'),
+    model: z.enum(['gpt-3.5-turbo']),
+    frequencyPenalty: z.number().optional(),
+    temperature: z.number().optional(),
+    stop: z.enum(['stop', 'length', 'content_filter', 'tool_calls']).optional(),
+    seed: z.number().optional(),
+    responseFormat: z.enum(['natural', 'json']).optional(),
+    topP: z.number().optional(),
+  }),
 ])
 
 export const initOpenAIGetChatCompletion =
-  (openai: OpenAI): GetChatCompletionFn<ModelConfig> =>
+  (openai: OpenAI): InferenceFn<ModelConfig> =>
   async (messages, config) => {
     const openAiCompletion = await openai.chat.completions.create({
       messages: chatMessagesToOpenAIChatMessages(messages),
@@ -56,7 +59,7 @@ export const initOpenAIGetChatCompletion =
 
 // import { Moderation } from 'openai/resources/moderations.mjs'
 import { ChatCompletion, ChatMessage } from '../types'
-import { GetChatCompletionFn } from '../prompt'
+import { InferenceFn } from '../prompt'
 
 // export type OpenAIModerationResult = Moderation
 // export type OpenAIModerationCategories = keyof Moderation.Categories

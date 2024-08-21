@@ -1,4 +1,4 @@
-import { ZodType, z } from 'zod'
+import { z } from 'zod'
 
 export interface ChatMessageImageAttachment
   extends z.infer<typeof chatMessageImageAttachmentSchema> {}
@@ -91,33 +91,3 @@ export const chatCompletionSchema = z.object({
   // Number of tokens in the completion message
   tokens: z.number().optional(),
 })
-
-export interface ModelConfigBase
-  extends z.infer<typeof modelConfigBaseSchema> {}
-export const modelConfigBaseSchema = z.object({
-  // Response format expected of the model
-  responseFormat: z.enum(['natural', 'json']).optional(),
-
-  // Model parameters
-  temperature: z.number().optional(),
-  seed: z.number().optional(),
-  stop: z.string().optional(),
-  topP: z.number().optional(),
-  maxTokens: z.number().optional(),
-  frequencyPenalty: z.number().optional(),
-})
-
-export interface ChatRequest<M extends ModelConfigBase>
-  extends Omit<z.infer<ReturnType<typeof chatRequestSchema>>, 'config'> {
-  config: M
-}
-export const chatRequestSchema = <M extends ModelConfigBase>(
-  modelConfigSchema: ZodType<M>,
-) =>
-  z.object({
-    // ModelConfig, potentially including model and parameters
-    config: modelConfigSchema,
-
-    // Message history to send as part of the chat request
-    messages: z.array(chatMessageSchema).default([]),
-  })
