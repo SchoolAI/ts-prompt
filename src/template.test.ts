@@ -6,12 +6,14 @@ describe('Testing Template', () => {
     const tpl = Template.build('Hello there!')
 
     expect(tpl.render()).toBe('Hello there!')
+    expect(tpl.placeholders).toEqual([])
   })
 
   test('Render a Template with one unique placeholder', () => {
     const tpl = Template.build('Hello {{greet}}!')
 
     expect(tpl.render({ greet: 'World' })).toBe('Hello World!')
+    expect(tpl.placeholders).toEqual(['greet'])
   })
 
   test('Render a Template with two unique placeholders', () => {
@@ -20,6 +22,7 @@ describe('Testing Template', () => {
     expect(tpl.render({ greet: 'World', name: 'Rosie' })).toBe(
       'Hello World! My name is Rosie.',
     )
+    expect(tpl.placeholders).toEqual(['greet', 'name'])
   })
 
   test('Render a Template with one placeholder used several times', () => {
@@ -30,6 +33,7 @@ describe('Testing Template', () => {
     expect(tpl.render({ greet: 'World' })).toBe(
       'Hello World! Wait, are you really World?',
     )
+    expect(tpl.placeholders).toEqual(['greet'])
   })
 
   test('Render a Template with one placeholder used correctly once and once without closing delimiter', () => {

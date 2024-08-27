@@ -13,7 +13,7 @@ const getDefaultConfig = (): ModelConfig => ({
 describe('createInstruction', () => {
   test('called with Template', () => {
     const inst = createInstruction({
-      input: getDefaultConfig(),
+      config: getDefaultConfig(),
       template: Template.build(`hello {{world}}`),
     })
 
@@ -22,7 +22,7 @@ describe('createInstruction', () => {
 
   test('merges modelConfig with defaults', () => {
     const inst = createInstruction({
-      input: { ...getDefaultConfig(), temperature: 0.7 },
+      config: { ...getDefaultConfig(), temperature: 0.7 },
       template: Template.build(''),
     })
 
@@ -32,7 +32,7 @@ describe('createInstruction', () => {
 
   test('`returns` and renders zod schema', () => {
     const inst = createInstruction({
-      input: getDefaultConfig(),
+      config: getDefaultConfig(),
       template: Template.build(
         'Based on the conversation so far, determine if the user has musical talent.',
       ),

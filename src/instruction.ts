@@ -2,10 +2,9 @@ import { ZodObjectDef, ZodType } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
 import { Template, combineTemplates } from './template'
 import { unindent } from './unindent'
-import { InferenceInputBase } from './types'
 
 export type Instruction<I, P extends string, Z extends ZodType<any, any>> = {
-  input: I
+  config: I
   template: Template<P>
   returns: Z | undefined
 }
@@ -21,16 +20,16 @@ export const createInstruction = <
   P extends string,
   Z extends ZodType<any, ZodObjectDef>,
 >({
-  input,
+  config: config,
   template,
   returns,
 }: {
-  input: I
+  config: I
   template: Template<P>
   returns?: Z | undefined
 }): Instruction<I, P, Z> => {
   return {
-    input,
+    config,
     template: returns
       ? combineTemplates(
           template,

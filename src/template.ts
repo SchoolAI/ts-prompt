@@ -12,7 +12,18 @@ export type ExtractParams<S extends string> =
 export type IfNever<T, Y, N> = [T] extends [never] ? Y : N
 
 export class Template<P extends string> {
-  private constructor(private template: string) {}
+  placeholders: IfNever<P, [], [string, ...string[]]>
+
+  // Private constructor to prevent instantiation outside of the `build` or `empty` methods
+  private constructor(private template: string) {
+    // Initialize the list of placeholders by finding all curly-brace placeholders in the template
+    type PH = IfNever<P, [], [string, ...string[]]>
+    this.placeholders = [
+      ...new Set(
+        [...template.matchAll(/{{(\w+)}}/g)].map(([_match, p1]) => p1),
+      ),
+    ] as PH
+  }
 
   // Build a template from a static template literal
   static build<S extends string>(template: S): Template<ExtractParams<S>> {
@@ -33,7 +44,7 @@ export class Template<P extends string> {
       return this.template
     }
 
-    return this.template.replace(/{{\s*(\w+)\s*}}/g, (_match, p1) => {
+    return this.template.replace(/{{(\w+)}}/g, (_match, p1) => {
       if (p1 in params) {
         return params[p1 as P]
       }
