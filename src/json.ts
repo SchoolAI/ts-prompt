@@ -1,4 +1,7 @@
-import { z } from 'zod'
+import { z, ZodSchema, ZodType } from 'zod'
+import { zodToJsonSchema } from 'zod-to-json-schema'
+import { unindent } from './unindent'
+import { InferenceFn } from './prompt'
 
 export const literalSchema = z.union([
   z.string(),
@@ -26,3 +29,17 @@ export const stringToJsonSchema = z
       return z.NEVER
     }
   })
+
+export const makeJsonTemplateString = (schema: ZodType<any, any>) =>
+  unindent(`
+    You must return the result as a JSON object. The result must strictly adhere to
+    the following JSON schema:\n
+  `) + JSON.stringify(zodToJsonSchema(schema), null, 2)
+
+export const makeJsonRequest =
+  <C>(schema: ZodSchema, infer: InferenceFn<C, z.infer<typeof schema>>) =>
+  async (rendered: string, config: C) => {
+    const content = rendered + '\n' + makeJsonTemplateString(schema)
+    const result = await infer(content, config)
+    return stringToJsonSchema.pipe(schema).parse(result)
+  }
