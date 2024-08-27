@@ -3,9 +3,9 @@ import { unindent } from './unindent'
 // Define a utility type that finds all curly-brace placeholders within a string and returns
 // them as a union type.
 //   e.g. "Give {{thing}} to {{person}}" returns the type ("thing" | "person")
-export type ExtractParams<S extends string> =
+export type ExtractPlaceholders<S extends string> =
   S extends `${infer _Start}{{${infer Param}}}${infer Rest}`
-    ? Param | ExtractParams<Rest>
+    ? Param | ExtractPlaceholders<Rest>
     : never
 
 // Define a utility type that checks if a type is `never`
@@ -26,7 +26,9 @@ export class Template<P extends string> {
   }
 
   // Build a template from a static template literal
-  static build<S extends string>(template: S): Template<ExtractParams<S>> {
+  static build<S extends string>(
+    template: S,
+  ): Template<ExtractPlaceholders<S>> {
     return new Template(unindent(template))
   }
 

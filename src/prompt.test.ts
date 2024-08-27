@@ -14,7 +14,7 @@ const defaultConfig: ModelConfig = {
 const mkPrompt = createPrompt<ModelConfig>(defaultConfig)
 
 describe('createPrompt', () => {
-  test('without template params', async () => {
+  test('without template args', async () => {
     const { request } = mkPrompt({
       template: `hello`,
       functions: { request: async () => null },
@@ -22,12 +22,12 @@ describe('createPrompt', () => {
     expect(await request()).toBe(null)
   })
 
-  test('with template params', async () => {
+  test('with template args', async () => {
     const { request } = mkPrompt({
       template: `hello {{world}}`,
       functions: { request: async () => 'greetings' },
     })
-    expect(await request({ params: { world: 'earth' } })).toBe('greetings')
+    expect(await request({ args: { world: 'earth' } })).toBe('greetings')
   })
 
   test('with partial config', async () => {
@@ -53,7 +53,7 @@ describe('createPrompt', () => {
       template: `hello {{world}}`,
       functions: { request: async content => content },
     })
-    const result = await request({ params: { world: 'earth' } })
+    const result = await request({ args: { world: 'earth' } })
     expect(result).toBe('hello earth')
   })
 })
