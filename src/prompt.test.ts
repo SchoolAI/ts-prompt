@@ -27,7 +27,7 @@ describe('createPrompt', () => {
       template: `hello {{world}}`,
       functions: { request: async () => 'greetings' },
     })
-    expect(await request({ world: 'earth' })).toBe('greetings')
+    expect(await request({ params: { world: 'earth' } })).toBe('greetings')
   })
 
   test('with partial config', async () => {
@@ -35,7 +35,7 @@ describe('createPrompt', () => {
       template: `hello`,
       functions: { request: async () => null },
     })
-    expect(await request({ model: 'gpt-4o' })).toBe(null)
+    expect(await request({ config: { model: 'gpt-4o' } })).toBe(null)
   })
 
   test('returns typed result', async () => {
@@ -46,5 +46,14 @@ describe('createPrompt', () => {
     })
     const result: Result = await request()
     expect(result).toStrictEqual({ martians: 1, earthlings: 2 })
+  })
+
+  test('fills placeholders', async () => {
+    const { request } = mkPrompt({
+      template: `hello {{world}}`,
+      functions: { request: async content => content },
+    })
+    const result = await request({ params: { world: 'earth' } })
+    expect(result).toBe('hello earth')
   })
 })
