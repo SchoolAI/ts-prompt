@@ -1,16 +1,27 @@
 import { ExtractPlaceholders, IfNever, Template } from './template'
 
 // Params are only needed when the Template has placeholders, so use a conditional type
-type PromptRequestArgs<I, P extends string> = IfNever<
+type PromptRequestArgs<C, X, P extends string> = IfNever<
   P,
-  [{ config: I }?],
-  [{ args: { [key in P]: string }; config?: I }]
+  { context: X; config?: C },
+  { context: X; config?: C; templateArgs: { [key in P]: string } }
 >
 
-export type InferenceFn<C, O> = (input: string, config?: C) => Promise<O>
+export type InferenceFn<C, X, O> = ({
+  renderedTemplate,
+  context,
+  config,
+}: {
+  renderedTemplate: string
+  context: X
+  config: C
+}) => Promise<O>
 
-export const createPrompt = <C>(defaultConfig: C) => {
-  return <S extends string, F extends { [key: string]: InferenceFn<C, any> }>({
+export const createPrompt = <C, X = undefined>(defaultConfig: C) => {
+  return <
+    S extends string,
+    F extends { [key: string]: InferenceFn<C, X, any> },
+  >({
     template,
     functions,
   }: {
@@ -21,22 +32,32 @@ export const createPrompt = <C>(defaultConfig: C) => {
     const tpl = Template.build(template)
     const entries = Object.entries(functions).map(([key, infer]) => {
       type PlaceholderArgs = IfNever<P, undefined, { [key in P]: string }>
-      const fn = async (...args: PromptRequestArgs<C, P>) => {
-        if (args.length > 1) throw new Error('Too many arguments')
-
+      const fn = async (args: PromptRequestArgs<C, X, P>) => {
         if (tpl.placeholders.length === 0) {
-          const { config } = args[0] ?? { config: undefined }
-          const content = tpl.render(undefined)
-          return await infer(content, { ...defaultConfig, ...config })
+          const { context, config } = args
+          const renderedTemplate = tpl.render(undefined)
+          return await infer({
+            renderedTemplate,
+            context,
+            config: { ...defaultConfig, ...config },
+          })
         } else {
-          const requiredArgs = args[0]
-          if (!requiredArgs || !('args' in requiredArgs)) {
-            throw new Error('Template has placeholders, so params are required')
+          const { context, config } = args
+          if (!('templateArgs' in args)) {
+            throw new Error(
+              'Template has placeholders, so template args are required',
+            )
           }
-          const content = tpl.render(requiredArgs.args as PlaceholderArgs)
-          return await infer(content, {
-            ...defaultConfig,
-            ...requiredArgs.config,
+          const renderedTemplate = tpl.render(
+            args.templateArgs as PlaceholderArgs,
+          )
+          return await infer({
+            renderedTemplate,
+            context,
+            config: {
+              ...defaultConfig,
+              ...config,
+            },
           })
         }
       }
@@ -44,7 +65,7 @@ export const createPrompt = <C>(defaultConfig: C) => {
     })
     return Object.fromEntries(entries) as {
       [K in keyof F]: (
-        ...args: PromptRequestArgs<Partial<C>, P>
+        args: PromptRequestArgs<Partial<C>, X, P>,
       ) => ReturnType<F[K]>
     }
   }

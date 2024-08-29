@@ -25,7 +25,11 @@ export const stringToJsonSchema = z
     try {
       return JSON.parse(str)
     } catch (e) {
-      ctx.addIssue({ code: 'custom', message: 'Invalid JSON' })
+      ctx.addIssue({
+        code: 'custom',
+        message: 'Invalid JSON',
+        params: { input: str },
+      })
       return z.NEVER
     }
   })
@@ -37,9 +41,19 @@ export const makeJsonTemplateString = (schema: ZodType<any, any>) =>
   `) + JSON.stringify(zodToJsonSchema(schema), null, 2)
 
 export const makeJsonRequest =
-  <C>(schema: ZodSchema, infer: InferenceFn<C, z.infer<typeof schema>>) =>
-  async (rendered: string, config: C) => {
-    const content = rendered + '\n' + makeJsonTemplateString(schema)
-    const result = await infer(content, config)
+  <C, X>(
+    schema: ZodSchema,
+    infer: InferenceFn<C, X, string>,
+  ): InferenceFn<C, X, z.infer<typeof schema>> =>
+  async ({ context, config, renderedTemplate }) => {
+    const renderedWithJsonInstructions =
+      renderedTemplate + '\n' + makeJsonTemplateString(schema)
+
+    const result = await infer({
+      renderedTemplate: renderedWithJsonInstructions,
+      context,
+      config,
+    })
+
     return stringToJsonSchema.pipe(schema).parse(result)
   }
