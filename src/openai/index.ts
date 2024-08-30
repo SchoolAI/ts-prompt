@@ -41,6 +41,26 @@ export const initOpenAIGetChatCompletion =
     return openAIChatCompletionToChatCompletion(openAiCompletion)
   }
 
+export const getChatCompletion = async (
+  openai: OpenAI,
+  messages: ChatMessage[],
+  config: ModelConfig,
+) => {
+  const completion = await openai.chat.completions.create({
+    messages: chatMessagesToOpenAIChatMessages(messages),
+    model: config.model,
+    frequency_penalty: config.frequencyPenalty,
+    temperature: config.temperature,
+    stop: config.stop,
+    seed: config.seed,
+    response_format: { type: 'text' as const },
+    top_p: config.topP,
+    stream: false,
+  })
+
+  return openAIChatCompletionToChatCompletion(completion)
+}
+
 // export type {
 //   ChatCompletion as OpenAIChatCompletion,
 //   ChatCompletionCreateParams as OpenAIChatCompletionCreateParams,
