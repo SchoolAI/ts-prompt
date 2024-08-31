@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { ZodSchema, z } from 'zod'
 
 import type { OpenAI } from 'openai'
 
@@ -6,6 +6,12 @@ import type {
   ChatCompletion as OpenAIChatCompletion,
   ChatCompletionMessageParam as OpenAIChatCompletionMessageParam,
 } from 'openai/resources/chat/completions'
+
+import { makeJsonTemplateString, stringToJsonSchema } from '../json'
+
+export type ChatRequest = {
+  messages: ChatMessage[]
+}
 
 export interface ModelConfig extends z.infer<typeof modelConfigSchema> {}
 export const modelConfigSchema = z.discriminatedUnion('provider', [
@@ -20,26 +26,6 @@ export const modelConfigSchema = z.discriminatedUnion('provider', [
     topP: z.number().optional(),
   }),
 ])
-
-export const initOpenAIGetChatCompletion =
-  (openai: OpenAI): InferenceFn<ModelConfig> =>
-  async (messages, config) => {
-    const openAiCompletion = await openai.chat.completions.create({
-      messages: chatMessagesToOpenAIChatMessages(messages),
-      model: config.model,
-      frequency_penalty: config.frequencyPenalty,
-      temperature: config.temperature,
-      stop: config.stop,
-      seed: config.seed,
-      response_format: responseFormatToOpenAIResponseFormat(
-        config.responseFormat ?? 'natural',
-      ),
-      top_p: config.topP,
-
-      stream: false,
-    })
-    return openAIChatCompletionToChatCompletion(openAiCompletion)
-  }
 
 export const getChatCompletion = async (
   openai: OpenAI,
@@ -61,28 +47,31 @@ export const getChatCompletion = async (
   return openAIChatCompletionToChatCompletion(completion)
 }
 
-// export type {
-//   ChatCompletion as OpenAIChatCompletion,
-//   ChatCompletionCreateParams as OpenAIChatCompletionCreateParams,
-//   ChatCompletionMessageParam as OpenAIChatCompletionMessageParam,
-//   ChatCompletionToolChoiceOption as OpenAIChatCompletionToolChoiceOption,
-// } from 'openai/resources/chat/completions'
+export const respondWithJson =
+  (openai: OpenAI, schema: ZodSchema) =>
+  async ({
+    renderedTemplate,
+    context,
+    config,
+  }: {
+    renderedTemplate: string
+    context: ChatRequest
+    config: ModelConfig
+  }) => {
+    const renderedWithJsonInstructions =
+      renderedTemplate + '\n' + makeJsonTemplateString(schema)
 
-// export type {
-//   ChatCompletionStream as OpenAIChatCompletionStream,
-//   ChatCompletionStreamParams as OpenAIChatCompletionStreamParams,
-// } from 'openai/lib/ChatCompletionStream'
+    const messages = [
+      { role: 'system' as const, content: renderedWithJsonInstructions },
+      ...context.messages,
+    ]
 
-// export type { ImageGenerateParams } from 'openai/resources/images'
+    const result = await getChatCompletion(openai, messages, config)
 
-// export { OpenAI } from 'openai'
+    return stringToJsonSchema.pipe(schema).parse(result.message.content)
+  }
 
-// import { Moderation } from 'openai/resources/moderations.mjs'
 import { ChatCompletion, ChatMessage } from '../types'
-import { InferenceFn } from '../prompt'
-
-// export type OpenAIModerationResult = Moderation
-// export type OpenAIModerationCategories = keyof Moderation.Categories
 
 export const responseFormatToOpenAIResponseFormat = (
   responseFormat: 'natural' | 'json',

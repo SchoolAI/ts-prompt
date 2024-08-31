@@ -2,17 +2,16 @@ import { describe, expect, test } from 'vitest'
 import { z } from 'zod'
 import { OpenAI } from 'openai'
 import { initPromptBuilder } from '../prompt'
-import { ModelConfig, getChatCompletion } from '../openai'
-import { ChatMessage } from '../types'
-import { makeJsonTemplateString, stringToJsonSchema } from '../json'
+import {
+  ChatRequest,
+  ModelConfig,
+  getChatCompletion,
+  respondWithJson,
+} from '../openai'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
-type Context = {
-  messages: ChatMessage[]
-}
-
-const mkPrompt = initPromptBuilder<ModelConfig, Context>({
+const mkPrompt = initPromptBuilder<ModelConfig, ChatRequest>({
   provider: 'openai',
   model: 'gpt-3.5-turbo',
 })
@@ -46,25 +45,6 @@ describe('mkPrompt', async () => {
   })
 
   test('requestJson', async () => {
-    const schema = z.object({
-      name: z.string().nullable().describe('The name of the course or lesson.'),
-      subject: z
-        .string()
-        .nullable()
-        .describe('The subject of the course or lesson.'),
-      duration: z
-        .string()
-        .nullable()
-        .describe('The duration of the course or lesson.'),
-      keyTopics: z
-        .array(z.string())
-        .describe('The key topics covered in the course or lesson.'),
-      targetAudience: z
-        .string()
-        .nullable()
-        .describe('The target audience for the course or lesson.'),
-    })
-
     const requestJson = mkPrompt(
       `
         You are an educational consultant. Extract the course or lesson name, subject, duration,
@@ -73,19 +53,30 @@ describe('mkPrompt', async () => {
 
         Record your findings in the natural language {{language}}.
       `,
-      async ({ renderedTemplate, context, config }) => {
-        const renderedWithJsonInstructions =
-          renderedTemplate + '\n' + makeJsonTemplateString(schema)
-
-        const messages = [
-          { role: 'system' as const, content: renderedWithJsonInstructions },
-          ...context.messages,
-        ]
-
-        const result = await getChatCompletion(openai, messages, config)
-
-        return stringToJsonSchema.pipe(schema).parse(result.message.content)
-      },
+      respondWithJson(
+        openai,
+        z.object({
+          name: z
+            .string()
+            .nullable()
+            .describe('The name of the course or lesson.'),
+          subject: z
+            .string()
+            .nullable()
+            .describe('The subject of the course or lesson.'),
+          duration: z
+            .string()
+            .nullable()
+            .describe('The duration of the course or lesson.'),
+          keyTopics: z
+            .array(z.string())
+            .describe('The key topics covered in the course or lesson.'),
+          targetAudience: z
+            .string()
+            .nullable()
+            .describe('The target audience for the course or lesson.'),
+        }),
+      ),
     )
 
     const details = await requestJson({
