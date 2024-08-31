@@ -1,14 +1,14 @@
 import { describe, test, expect } from 'vitest'
 import { z } from 'zod'
 import { makeJsonRequest } from './json'
-import { InferenceFn, createPrompt } from './prompt'
+import { InferenceFn, initPromptBuilder } from './prompt'
 
 type ModelConfig = {
   provider: 'openai'
   model: 'gpt-3.5-turbo' | 'gpt-4o'
 }
 
-const mkPrompt = createPrompt<ModelConfig, Request>({
+const mkPrompt = initPromptBuilder<ModelConfig, Request>({
   provider: 'openai',
   model: 'gpt-3.5-turbo',
 })
@@ -37,10 +37,10 @@ describe('composition', async () => {
       return `{"messages": ${messages}, "martians": ${martians}, "comment": "${comment}"}`
     }
 
-    const { request } = mkPrompt({
-      template: `hello {{world}}`,
-      functions: { request: makeJsonRequest(resultSchema, chatCompletion) },
-    })
+    const request = mkPrompt(
+      `hello {{world}}`,
+      makeJsonRequest(resultSchema, chatCompletion),
+    )
 
     const result = await request({
       templateArgs: { world: 'earth' },

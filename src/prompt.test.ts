@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { createPrompt } from './prompt'
+import { initPromptBuilder } from './prompt'
 
 type ModelConfig = {
   provider: 'openai'
@@ -15,22 +15,19 @@ const defaultConfig: ModelConfig = {
   model: 'gpt-3.5-turbo',
 }
 
-const mkPrompt = createPrompt<ModelConfig, Context>(defaultConfig)
+const mkPrompt = initPromptBuilder<ModelConfig, Context>(defaultConfig)
 
 describe('createPrompt', () => {
   test('without template args', async () => {
-    const { request } = mkPrompt({
-      template: `hello`,
-      functions: { request: async () => null },
-    })
+    const request = mkPrompt(`hello`, async () => null)
     expect(await request({ context: { value: '' } })).toBe(null)
   })
 
   test('with template args', async () => {
-    const { request } = mkPrompt({
-      template: `hello {{world}}`,
-      functions: { request: async ({ renderedTemplate }) => renderedTemplate },
-    })
+    const request = mkPrompt(
+      `hello {{world}}`,
+      async ({ renderedTemplate }) => renderedTemplate,
+    )
     expect(
       await request({
         templateArgs: { world: 'earth' },
@@ -40,12 +37,10 @@ describe('createPrompt', () => {
   })
 
   test('with partial config', async () => {
-    const { request } = mkPrompt({
-      template: `hello`,
-      functions: {
-        request: async ({ config }) => `${config?.provider}/${config?.model}`,
-      },
-    })
+    const request = mkPrompt(
+      `hello`,
+      async ({ config }) => `${config?.provider}/${config?.model}`,
+    )
     expect(
       await request({
         context: { value: '' },
@@ -55,13 +50,10 @@ describe('createPrompt', () => {
   })
 
   test('with context', async () => {
-    const { request } = mkPrompt({
-      template: `hello`,
-      functions: {
-        request: async ({ context, config }) =>
-          `${config?.model} with ${context?.value}`,
-      },
-    })
+    const request = mkPrompt(
+      `hello`,
+      async ({ context, config }) => `${config?.model} with ${context?.value}`,
+    )
     expect(await request({ context: { value: 'context' } })).toBe(
       'gpt-3.5-turbo with context',
     )
@@ -69,10 +61,10 @@ describe('createPrompt', () => {
 
   test('returns typed result', async () => {
     type Result = { martians: number; earthlings: number }
-    const { request } = mkPrompt({
-      template: `hello`,
-      functions: { request: async () => ({ martians: 1, earthlings: 2 }) },
-    })
+    const request = mkPrompt(`hello`, async () => ({
+      martians: 1,
+      earthlings: 2,
+    }))
     const result: Result = await request({ context: { value: '' } })
     expect(result).toStrictEqual({ martians: 1, earthlings: 2 })
   })
