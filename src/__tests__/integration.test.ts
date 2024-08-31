@@ -6,6 +6,7 @@ import {
   ChatRequest,
   ModelConfig,
   getChatCompletion,
+  respondWithCompletion,
   respondWithJson,
 } from '../openai'
 
@@ -23,14 +24,7 @@ describe('mkPrompt', async () => {
         You are a professional AI assistant for teachers. Respond in the language {{language}}.
         Be helpful and kind, and extremely concise by answering in no more than a sentence.
       `,
-      async ({ renderedTemplate, context, config }) => {
-        const messages = [
-          { role: 'system' as const, content: renderedTemplate },
-          ...context.messages,
-        ]
-
-        return await getChatCompletion(openai, messages, config)
-      },
+      respondWithCompletion(openai),
     )
 
     const capital = await requestContent({
@@ -40,7 +34,6 @@ describe('mkPrompt', async () => {
       templateArgs: { language: 'English' },
     })
 
-    console.log({ capital })
     expect(capital).toBeDefined()
   })
 
@@ -97,7 +90,6 @@ describe('mkPrompt', async () => {
       templateArgs: { language: 'English' },
     })
 
-    console.log({ details })
     expect(details).toBeDefined()
   })
 })

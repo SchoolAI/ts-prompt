@@ -8,6 +8,7 @@ import type {
 } from 'openai/resources/chat/completions'
 
 import { makeJsonTemplateString, stringToJsonSchema } from '../json'
+import { ChatCompletion, ChatMessage } from '../types'
 
 export type ChatRequest = {
   messages: ChatMessage[]
@@ -47,17 +48,15 @@ export const getChatCompletion = async (
   return openAIChatCompletionToChatCompletion(completion)
 }
 
+type OpenAIInferenceParams = {
+  renderedTemplate: string
+  context: ChatRequest
+  config: ModelConfig
+}
+
 export const respondWithJson =
   (openai: OpenAI, schema: ZodSchema) =>
-  async ({
-    renderedTemplate,
-    context,
-    config,
-  }: {
-    renderedTemplate: string
-    context: ChatRequest
-    config: ModelConfig
-  }) => {
+  async ({ renderedTemplate, context, config }: OpenAIInferenceParams) => {
     const renderedWithJsonInstructions =
       renderedTemplate + '\n' + makeJsonTemplateString(schema)
 
@@ -71,7 +70,16 @@ export const respondWithJson =
     return stringToJsonSchema.pipe(schema).parse(result.message.content)
   }
 
-import { ChatCompletion, ChatMessage } from '../types'
+export const respondWithCompletion =
+  (openai: OpenAI) =>
+  async ({ renderedTemplate, context, config }: OpenAIInferenceParams) => {
+    const messages = [
+      { role: 'system' as const, content: renderedTemplate },
+      ...context.messages,
+    ]
+
+    return await getChatCompletion(openai, messages, config)
+  }
 
 export const responseFormatToOpenAIResponseFormat = (
   responseFormat: 'natural' | 'json',
