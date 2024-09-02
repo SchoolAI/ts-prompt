@@ -121,7 +121,6 @@ describe('mkImage', async () => {
       request: 'a red apple',
     })
 
-    console.log('images', images)
     expect(images.length).toBe(1)
   }, 30000 /* timeout 30 seconds */)
 })

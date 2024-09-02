@@ -1,20 +1,23 @@
-import { ZodSchema, z } from 'zod'
-
+import type { ZodSchema } from 'zod'
 import type { OpenAI } from 'openai'
-
 import type {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions'
-
+import type { ImageGenerateParams } from 'openai/resources/images.mjs'
 import { makeJsonTemplateString, stringToJsonSchema } from '../json'
-import { ImageGenerateParams } from 'openai/resources/images.mjs'
 
 export type ChatRequest = {
   messages: ChatCompletionMessageParam[]
 }
 
-export const getImageInference = async (
+export type OpenAIInferenceParams = {
+  renderedTemplate: string
+  request: ChatRequest
+  config: ChatCompletionCreateParamsNonStreaming
+}
+
+const $getImageInference = async (
   openai: OpenAI,
   prompt: string,
   config: ImageGenerateParams,
@@ -30,13 +33,7 @@ export const getImageInference = async (
   return []
 }
 
-export type OpenAIInferenceParams = {
-  renderedTemplate: string
-  request: ChatRequest
-  config: ChatCompletionCreateParamsNonStreaming
-}
-
-const $respondWithCompletion = async (
+const $getTextInference = async (
   openai: OpenAI,
   { renderedTemplate, request, config }: OpenAIInferenceParams,
 ) => {
@@ -66,7 +63,7 @@ export const respondWithImage =
   }) => {
     const description = renderedTemplate + '\n' + request
 
-    return await getImageInference(openai, description, {
+    return await $getImageInference(openai, description, {
       ...config,
       response_format: format,
     })
@@ -75,7 +72,7 @@ export const respondWithImage =
 export const respondWithCompletion =
   (openai: OpenAI) =>
   async ({ renderedTemplate, request, config }: OpenAIInferenceParams) =>
-    await $respondWithCompletion(openai, {
+    await $getTextInference(openai, {
       renderedTemplate,
       request,
       config,
@@ -83,7 +80,7 @@ export const respondWithCompletion =
 
 export const respondWithString =
   (openai: OpenAI) => async (params: OpenAIInferenceParams) =>
-    (await $respondWithCompletion(openai, params)).message.content
+    (await $getTextInference(openai, params)).message.content
 
 export const respondWithJson =
   (openai: OpenAI, schema: ZodSchema) =>
@@ -91,7 +88,7 @@ export const respondWithJson =
     const renderedWithJsonInstructions =
       renderedTemplate + '\n' + makeJsonTemplateString(schema)
 
-    const completion = await $respondWithCompletion(openai, {
+    const completion = await $getTextInference(openai, {
       renderedTemplate: renderedWithJsonInstructions,
       request,
       config,
