@@ -91,7 +91,7 @@ export const respondWithJson =
     const completion = await $getTextInference(openai, {
       renderedTemplate: renderedWithJsonInstructions,
       request,
-      config,
+      config: { ...config, response_format: { type: 'json_object' } },
     })
 
     return stringToJsonSchema.pipe(schema).parse(completion.message.content)
