@@ -1,17 +1,15 @@
 import { describe, expect, test } from 'vitest'
 import { z } from 'zod'
 import { OpenAI } from 'openai'
+import type { ImageGenerateParams } from 'openai/resources/images.mjs'
 import type { ChatCompletionCreateParamsNonStreaming } from 'openai/resources/chat/completions'
 import { initPromptBuilder } from '../prompt'
 import {
   ChatRequest,
-  OpenAIInferenceParams,
-  getImageInference,
-  respondWithImageUrl,
+  respondWithImage,
   respondWithJson,
   respondWithString,
 } from '../openai'
-import { ImageGenerateParams } from 'openai/resources/images.mjs'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
@@ -29,13 +27,13 @@ describe('mkPrompt', async () => {
     const requestContent = mkPrompt(
       `
         You are a professional AI assistant for teachers. Respond in the language {{language}}.
-        Be helpful and kind, and extremely concise by answering in no more than a sentence.
+        Be helpful and kind, and extremely concise by answering with a single word or phrase.
       `,
       respondWithString(openai),
     )
 
     const capital = await requestContent({
-      context: {
+      request: {
         messages: [{ role: 'user', content: 'What is the capital of France?' }],
       },
       templateArgs: { language: 'English' },
@@ -80,7 +78,7 @@ describe('mkPrompt', async () => {
     )
 
     const details = await requestJson({
-      context: {
+      request: {
         messages: [
           {
             role: 'user',
@@ -105,6 +103,7 @@ const mkImage = initPromptBuilder<ImageGenerateParams, string>({
   prompt: '',
   model: 'dall-e-3',
   size: '1024x1024',
+  response_format: 'url',
 })
 
 describe('mkImage', async () => {
@@ -114,15 +113,15 @@ describe('mkImage', async () => {
       Create a beautiful, flat color image suitable for iconography.
       Make it in the style of '{{style}}'.
     `,
-      respondWithImageUrl(openai),
+      respondWithImage(openai, 'url'),
     )
 
     const images = await request({
       templateArgs: { style: 'absurdism' },
-      context: 'a red apple',
+      request: 'a red apple',
     })
 
-    // console.log('image', image)
-    expect(images).toStrictEqual('https://cdn.openai.com/dall-e/3/256.png')
-  })
+    console.log('images', images)
+    expect(images.length).toBe(1)
+  }, 30000 /* timeout 30 seconds */)
 })

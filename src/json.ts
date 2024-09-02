@@ -45,13 +45,13 @@ export const makeJsonRequest =
     schema: ZodSchema,
     infer: InferenceFn<C, X, string>,
   ): InferenceFn<C, X, z.infer<typeof schema>> =>
-  async ({ context, config, renderedTemplate }) => {
+  async ({ request, config, renderedTemplate }) => {
     const renderedWithJsonInstructions =
       renderedTemplate + '\n' + makeJsonTemplateString(schema)
 
     const result = await infer({
       renderedTemplate: renderedWithJsonInstructions,
-      context,
+      request,
       config,
     })
 

@@ -6,7 +6,7 @@ type ModelConfig = {
   model: 'gpt-3.5-turbo' | 'gpt-4o'
 }
 
-type Context = {
+type Request = {
   value: string
 }
 
@@ -15,12 +15,12 @@ const defaultConfig: ModelConfig = {
   model: 'gpt-3.5-turbo',
 }
 
-const mkPrompt = initPromptBuilder<ModelConfig, Context>(defaultConfig)
+const mkPrompt = initPromptBuilder<ModelConfig, Request>(defaultConfig)
 
 describe('createPrompt', () => {
   test('without template args', async () => {
     const request = mkPrompt(`hello`, async () => null)
-    expect(await request({ context: { value: '' } })).toBe(null)
+    expect(await request({ request: { value: '' } })).toBe(null)
   })
 
   test('with template args', async () => {
@@ -31,7 +31,7 @@ describe('createPrompt', () => {
     expect(
       await request({
         templateArgs: { world: 'earth' },
-        context: { value: '' },
+        request: { value: '' },
       }),
     ).toBe('hello earth')
   })
@@ -43,18 +43,18 @@ describe('createPrompt', () => {
     )
     expect(
       await request({
-        context: { value: '' },
+        request: { value: '' },
         config: { model: 'gpt-4o' },
       }),
     ).toBe('openai/gpt-4o')
   })
 
-  test('with context', async () => {
+  test('with request', async () => {
     const request = mkPrompt(
       `hello`,
-      async ({ context, config }) => `${config?.model} with ${context?.value}`,
+      async ({ request, config }) => `${config?.model} with ${request?.value}`,
     )
-    expect(await request({ context: { value: 'context' } })).toBe(
+    expect(await request({ request: { value: 'context' } })).toBe(
       'gpt-3.5-turbo with context',
     )
   })
@@ -65,7 +65,7 @@ describe('createPrompt', () => {
       martians: 1,
       earthlings: 2,
     }))
-    const result: Result = await request({ context: { value: '' } })
+    const result: Result = await request({ request: { value: '' } })
     expect(result).toStrictEqual({ martians: 1, earthlings: 2 })
   })
 })

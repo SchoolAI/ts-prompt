@@ -32,17 +32,17 @@ export const getImageInference = async (
 
 export type OpenAIInferenceParams = {
   renderedTemplate: string
-  context: ChatRequest
+  request: ChatRequest
   config: ChatCompletionCreateParamsNonStreaming
 }
 
 const $respondWithCompletion = async (
   openai: OpenAI,
-  { renderedTemplate, context, config }: OpenAIInferenceParams,
+  { renderedTemplate, request, config }: OpenAIInferenceParams,
 ) => {
   const messages = [
     { role: 'system' as const, content: renderedTemplate },
-    ...context.messages,
+    ...request.messages,
   ]
 
   const result = await openai.chat.completions.create({ ...config, messages })
@@ -53,25 +53,33 @@ const $respondWithCompletion = async (
   return firstChoice
 }
 
-export const respondWithImageUrl =  (openai: OpenAI) =>
+export const respondWithImage =
+  (openai: OpenAI, format: 'url' | 'b64_json') =>
   async ({
     renderedTemplate,
-    context,
+    request,
     config,
   }: {
     renderedTemplate: string
-    context: string
+    request: string
     config: ImageGenerateParams
   }) => {
-    const description = renderedTemplate + context
+    const description = renderedTemplate + '\n' + request
 
-    return await getImageInference(openai, description, config)
-  },
+    return await getImageInference(openai, description, {
+      ...config,
+      response_format: format,
+    })
+  }
 
 export const respondWithCompletion =
   (openai: OpenAI) =>
-  async ({ renderedTemplate, context, config }: OpenAIInferenceParams) =>
-    await $respondWithCompletion(openai, { renderedTemplate, context, config })
+  async ({ renderedTemplate, request, config }: OpenAIInferenceParams) =>
+    await $respondWithCompletion(openai, {
+      renderedTemplate,
+      request,
+      config,
+    })
 
 export const respondWithString =
   (openai: OpenAI) => async (params: OpenAIInferenceParams) =>
@@ -79,13 +87,13 @@ export const respondWithString =
 
 export const respondWithJson =
   (openai: OpenAI, schema: ZodSchema) =>
-  async ({ renderedTemplate, context, config }: OpenAIInferenceParams) => {
+  async ({ renderedTemplate, request, config }: OpenAIInferenceParams) => {
     const renderedWithJsonInstructions =
       renderedTemplate + '\n' + makeJsonTemplateString(schema)
 
     const completion = await $respondWithCompletion(openai, {
       renderedTemplate: renderedWithJsonInstructions,
-      context,
+      request,
       config,
     })
 

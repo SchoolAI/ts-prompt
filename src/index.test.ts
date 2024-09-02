@@ -25,10 +25,10 @@ describe('composition', async () => {
   test('createPrompt and makeJsonRequest', async () => {
     const chatCompletion: InferenceFn<ModelConfig, Request, string> = async ({
       renderedTemplate,
-      context,
+      request,
       config,
     }) => {
-      const messages = context.timeline.length
+      const messages = request.timeline.length
       const martians = config.model.length
       const comment =
         renderedTemplate.split('\n')[0] +
@@ -44,7 +44,7 @@ describe('composition', async () => {
 
     const result = await request({
       templateArgs: { world: 'earth' },
-      context: { timeline: ['first message', 'second message'] },
+      request: { timeline: ['first message', 'second message'] },
     })
 
     expect(result.messages).toBe(2)

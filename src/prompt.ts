@@ -3,17 +3,17 @@ import { ExtractPlaceholders, IfNever, Template } from './template'
 // Params are only needed when the Template has placeholders, so use a conditional type
 type PromptRequestArgs<C, X, P extends string> = IfNever<
   P,
-  { context: X; config?: C },
-  { context: X; config?: C; templateArgs: { [key in P]: string } }
+  { request: X; config?: C },
+  { request: X; config?: C; templateArgs: { [key in P]: string } }
 >
 
 export type InferenceFn<C, X, O> = ({
   renderedTemplate,
-  context,
+  request,
   config,
 }: {
   renderedTemplate: string
-  context: X
+  request: X
   config: C
 }) => Promise<O>
 
@@ -27,17 +27,19 @@ export const initPromptBuilder = <C, X = undefined>(defaultConfig: C) => {
 
     const tpl = Template.build(template)
 
-    return async (args: PromptRequestArgs<Partial<C>, X, P>) => {
+    return async (
+      args: PromptRequestArgs<Partial<C>, X, P>,
+    ): Promise<Awaited<ReturnType<F>>> => {
       if (tpl.placeholders.length === 0) {
-        const { context, config } = args
+        const { request, config } = args
         const renderedTemplate = tpl.render(undefined)
         return await infer({
           renderedTemplate,
-          context,
+          request,
           config: { ...defaultConfig, ...config },
         })
       } else {
-        const { context, config } = args
+        const { request, config } = args
         if (!('templateArgs' in args)) {
           throw new Error(
             'Template has placeholders, so template args are required',
@@ -48,7 +50,7 @@ export const initPromptBuilder = <C, X = undefined>(defaultConfig: C) => {
         )
         return await infer({
           renderedTemplate,
-          context,
+          request,
           config: {
             ...defaultConfig,
             ...config,
