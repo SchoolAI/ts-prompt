@@ -125,3 +125,13 @@ const images = await request({
 
 You can create your own `respondWithImage` function if you want to use a different inference
 engine, or if you need special logging, tracking, retry logic, etc.
+
+## Tests
+
+`ts-prompt` comes with a test suite of unit tests and a handful of integrtion tests. The
+integration tests call out to an OpenAI API endpoint and require a valid `OPENAI_API_KEY` to be set
+in the environment. To run the tests, use the following command:
+
+```bash
+$ pnpm test
+```
