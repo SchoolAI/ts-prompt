@@ -1,28 +1,26 @@
 # ts-prompt
 
 `ts-prompt` is a simple typescript library for constructing typesafe prompts for LLMs. Its inputs
-(template placeholders), and outputs (zod-parsed results) are guaranteed to be correctly typed
+(template arguments), and outputs (zod-parsed results) are guaranteed to be correctly typed
 so that code changes and prompt changes cannot get out of sync. The patterns in this library were
 extracted from SchoolAI's large, working codebase and agentic system. It is provider-agnostic, but
 works well with OpenAI.
 
-Note that it is not possible to take advantage of `ts-prompt` if prompts are stored in a database--
-the prompts must be stored in the code itself so that typescript's powerful engine can extract any
-placeholders in the prompt template and create type consistency across the codebase.
+Note that it is not possible to take advantage of template placeholders if prompts are stored in a
+database--the prompts must be stored in the code itself so that typescript's powerful engine can
+extract placeholders in the prompt template and create type consistency across the codebase.
 
 ## Example
 
 ```typescript
-// inferred type:
-//
-// JsonPrompt<ModelConfig, "language", {
-//     name: string | null;
-//     subject: string | null;
-//     duration: string | null;
-//     keyTopics: string[];
-//     targetAudience: string | null;
-// }>
-const prompt = mkPrompt({
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+
+const mkPrompt = initPromptBuilder<
+  ChatCompletionCreateParamsNonStreaming,
+  ChatRequest
+>({ messages: [], model: 'gpt-3.5-turbo', stream: false, })
+
+const requestCourseMetadata = mkPrompt({
   template: `
     You are an educational consultant. Extract the course or lesson name, subject, duration,
     key topics, and target audience. If information is not available, do not make up details--
@@ -30,41 +28,51 @@ const prompt = mkPrompt({
 
     Record your findings in the natural language {{language}}.
   `,
-  returns: z.object({
-    name: z.string().nullable().describe('The name of the course or lesson.'),
-    subject: z.string().nullable().describe('The subject of the course or lesson.'),
-    duration: z.string().nullable().describe('The duration of the course or lesson.'),
-    keyTopics: z.array(z.string()).describe('The key topics covered in the course or lesson.'),
-    targetAudience: z.string().nullable().describe('The target audience for the course or lesson.'),
-  }),
+  respondWithJson(openai,
+    z.object({
+      name: z.string().nullable()
+        .describe('The name of the course or lesson.'),
+      subject: z.string().nullable()
+        .describe('The subject of the course or lesson.'),
+      duration: z.string().nullable()
+        .describe('How long the course or lesson is, e.g. hours, days, or weeks.'),
+      keyTopics: z.array(z.string())
+        .describe('The key topics covered in the course or lesson.'),
+      targetAudience: z.string().nullable()
+        .describe('The target audience for the course or lesson.'),
+    })
+  )
 })
 
-// Note: the `prompt` object above has type `Prompt<"language">` and enforces that all
-// requests (e.g. `requestJson` below) pass in a `language` parameter. It also enforces
-// that the response from the LLM is a JSON object that `returns` the correct shape and
-// types, parsed by the zod schema provided. The result is guaranteed to be typed
-// correctly (or an error will be thrown).
+// Note: the async `requestCourseMetadata` function above will require a `language` template
+// arg to be passed in, enforced by typescript. It also enforces that the response from the LLM
+// is a JSON object with the correct shape and types, parsed by the zod schema provided. The result
+// is guaranteed to be typed correctly (or an error will be thrown).
 
 // Request the AI to provide a response
-const details = await prompt.requestJson({
-  timeline: [
-    {
-      role: 'user',
-      content: `
-        The kindergarten class will be learning about the life cycle of a butterfly. The topic will
-        cover the different stages from egg, to caterpillar, to chrysalis, and finally to
-        butterfly. The lesson will include hands-on activities such as observing live caterpillars
-        and creating butterfly crafts. The target audience for this lesson is young children aged
-        4-6 years old.
-      `
-    }
-  ],
-  params: { language: 'English' },
+const details = await requestCourseMetadata({
+  request: {
+    messages: [
+      {
+        role: 'user',
+        content: `
+          The kindergarten class will be learning about the life cycle of a butterfly. The topic will
+          cover the different stages from egg, to caterpillar, to chrysalis, and finally to
+          butterfly. The lesson will include hands-on activities such as observing live caterpillars
+          and creating butterfly crafts. The target audience for this lesson is young children aged
+          4-6 years old.
+        `
+      }
+    ],
+  },
+  templateArgs: { language: 'English' },
+  // optional:
+  // config: { temperature: 0.8 },
 })
 
 // Note: in this example, the user message will be appended by default to the system message,
 // before it is sent to the LLM for inference. But this is flexible--you can arrange or
-// rearrange the timeline however you need. See `joinTimeline` in the `initPrompt` function.
+// rearrange the timeline however you need. See the `respondWithJson` function for more info.
 
 console.log(details)
 // {
@@ -80,28 +88,42 @@ console.log(details)
 
 `ts-prompt` is very flexible around what inference engine or LLM it uses, how it logs information,
 and what kind of model config it uses. In order to have this much flexibility, the first thing
-you need to create is an `mkPrompt` function:
+you need to create is a function that builds prompts, e.g. `mkPrompt` or `mkImagePrompt` (you can
+name it what you like):
 
 ```typescript
 import { OpenAI } from 'openai';
-import { initPrompt, initOpenAIGetChatCompletion } from 'ts-prompt';
+import { initPromptBuilder } from 'ts-prompt';
 
 // Initialize OpenAI client with API key
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-// Function to get chat completion
-const getChatCompletion = initOpenAIGetChatCompletion(openai);
+// Initialize the mkImage function with default configuration
+const mkImagePrompt = initPromptBuilder<ImageGenerateParams, string>({
+  prompt: '',
+  model: 'dall-e-2',
+  size: '256x256',
+  response_format: 'url',
+})
 
-// Initialize the mkPrompt function with default configuration
-const mkPrompt = initPrompt(getChatCompletion, {
-  provider: 'openai',
-  model: 'gpt-3.5-turbo',
-});
+// now use `mkImage` to define your typesafe image prompts:
+const requestGenerateIcon = mkImagePrompt(
+  `
+  Create a beautiful, flat color image suitable for iconography.
+  Make it in the style of '{{style}}'.
+`,
+  respondWithImage(openai, 'url'),
+)
 
-// now use `mkPrompt` to define your typesafe prompts...
+// finally, use the `requestGenerateIcon` function to request an image:
+const images = await request({
+  templateArgs: { style: 'absurdism' },
+  request: 'a red apple',
+})
+
 ```
 
-You can create your own `getChatCompletion` function if you want to use a different inference
+You can create your own `respondWithImage` function if you want to use a different inference
 engine, or if you need special logging, tracking, retry logic, etc.
 
 In addition, while the default OpenAI `getChatCompletion` and `mkPrompt` functions use a suggested

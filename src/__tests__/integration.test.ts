@@ -101,8 +101,8 @@ describe('mkPrompt', async () => {
 
 const mkImage = initPromptBuilder<ImageGenerateParams, string>({
   prompt: '',
-  model: 'dall-e-3',
-  size: '1024x1024',
+  model: 'dall-e-2',
+  size: '256x256',
   response_format: 'url',
 })
 
