@@ -98,7 +98,7 @@ import { initPromptBuilder } from 'ts-prompt';
 // Initialize OpenAI client with API key
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-// Initialize the mkImage function with default configuration
+// Initialize the `mkImagePrompt` function with default configuration
 const mkImagePrompt = initPromptBuilder<ImageGenerateParams, string>({
   prompt: '',
   model: 'dall-e-2',
@@ -106,7 +106,7 @@ const mkImagePrompt = initPromptBuilder<ImageGenerateParams, string>({
   response_format: 'url',
 })
 
-// now use `mkImage` to define your typesafe image prompts:
+// now use `mkImagePrompt` to define a typesafe, specific image prompt:
 const requestGenerateIcon = mkImagePrompt(
   `
   Create a beautiful, flat color image suitable for iconography.
@@ -116,7 +116,7 @@ const requestGenerateIcon = mkImagePrompt(
 )
 
 // finally, use the `requestGenerateIcon` function to request an image:
-const images = await request({
+const images = await requestGenerateIcon({
   templateArgs: { style: 'absurdism' },
   request: 'a red apple',
 })
@@ -125,6 +125,10 @@ const images = await request({
 
 You can create your own `respondWithImage` function if you want to use a different inference
 engine, or if you need special logging, tracking, retry logic, etc.
+
+Other functions specific to OpenAI, such as `respondWithJson`, `respondWithText`, etc., are
+easy to change out with your own app-specific types or logging requirements. See
+[src/openai/index.ts].
 
 ## Tests
 
