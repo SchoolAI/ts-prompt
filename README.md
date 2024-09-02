@@ -128,7 +128,7 @@ engine, or if you need special logging, tracking, retry logic, etc.
 
 Other functions specific to OpenAI, such as `respondWithJson`, `respondWithText`, etc., are
 easy to change out with your own app-specific types or logging requirements. See
-[src/openai/index.ts].
+[src/openai/index.ts](src/openai/index.ts).
 
 ## Tests
 
