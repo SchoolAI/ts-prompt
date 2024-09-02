@@ -1,20 +1,27 @@
 import { describe, expect, test } from 'vitest'
 import { z } from 'zod'
 import { OpenAI } from 'openai'
+import type { ChatCompletionCreateParamsNonStreaming } from 'openai/resources/chat/completions'
 import { initPromptBuilder } from '../prompt'
 import {
   ChatRequest,
-  ModelConfig,
-  getChatCompletion,
-  respondWithCompletion,
+  OpenAIInferenceParams,
+  getImageInference,
+  respondWithImageUrl,
   respondWithJson,
+  respondWithString,
 } from '../openai'
+import { ImageGenerateParams } from 'openai/resources/images.mjs'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
-const mkPrompt = initPromptBuilder<ModelConfig, ChatRequest>({
-  provider: 'openai',
+const mkPrompt = initPromptBuilder<
+  ChatCompletionCreateParamsNonStreaming,
+  ChatRequest
+>({
+  messages: [],
   model: 'gpt-3.5-turbo',
+  stream: false,
 })
 
 describe('mkPrompt', async () => {
@@ -24,7 +31,7 @@ describe('mkPrompt', async () => {
         You are a professional AI assistant for teachers. Respond in the language {{language}}.
         Be helpful and kind, and extremely concise by answering in no more than a sentence.
       `,
-      respondWithCompletion(openai),
+      respondWithString(openai),
     )
 
     const capital = await requestContent({
@@ -34,7 +41,7 @@ describe('mkPrompt', async () => {
       templateArgs: { language: 'English' },
     })
 
-    expect(capital).toBeDefined()
+    expect(capital).toBe('Paris')
   })
 
   test('requestJson', async () => {
@@ -91,5 +98,31 @@ describe('mkPrompt', async () => {
     })
 
     expect(details).toBeDefined()
+  })
+})
+
+const mkImage = initPromptBuilder<ImageGenerateParams, string>({
+  prompt: '',
+  model: 'dall-e-3',
+  size: '1024x1024',
+})
+
+describe('mkImage', async () => {
+  test('request', async () => {
+    const request = mkImage(
+      `
+      Create a beautiful, flat color image suitable for iconography.
+      Make it in the style of '{{style}}'.
+    `,
+      respondWithImageUrl(openai),
+    )
+
+    const images = await request({
+      templateArgs: { style: 'absurdism' },
+      context: 'a red apple',
+    })
+
+    // console.log('image', image)
+    expect(images).toStrictEqual('https://cdn.openai.com/dall-e/3/256.png')
   })
 })
