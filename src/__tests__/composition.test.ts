@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
-import { z } from 'zod'
-import { makeJsonRequest } from '../json'
+import { z, ZodSchema } from 'zod'
 import { InferenceFn, initPromptBuilder } from '../prompt'
+import { makeJsonTemplateString, stringToJsonSchema } from '../json'
 
 type ModelConfig = {
   provider: 'openai'
@@ -20,6 +20,24 @@ const resultSchema = z.object({
   martians: z.number(),
   comment: z.string(),
 })
+
+const makeJsonRequest =
+  <C, X>(
+    schema: ZodSchema,
+    infer: InferenceFn<C, X, string>,
+  ): InferenceFn<C, X, z.infer<typeof schema>> =>
+  async ({ request, config, renderedTemplate }) => {
+    const renderedWithJsonInstructions =
+      renderedTemplate + '\n' + makeJsonTemplateString(schema)
+
+    const result = await infer({
+      renderedTemplate: renderedWithJsonInstructions,
+      request,
+      config,
+    })
+
+    return stringToJsonSchema.pipe(schema).parse(result)
+  }
 
 describe('composition', async () => {
   test('createPrompt and makeJsonRequest', async () => {
