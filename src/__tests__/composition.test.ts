@@ -1,7 +1,7 @@
 import { describe, test, expect } from 'vitest'
 import { z } from 'zod'
-import { makeJsonRequest } from './json'
-import { InferenceFn, initPromptBuilder } from './prompt'
+import { makeJsonRequest } from '../json'
+import { InferenceFn, initPromptBuilder } from '../prompt'
 
 type ModelConfig = {
   provider: 'openai'
