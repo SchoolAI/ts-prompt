@@ -125,8 +125,3 @@ const images = await request({
 
 You can create your own `respondWithImage` function if you want to use a different inference
 engine, or if you need special logging, tracking, retry logic, etc.
-
-In addition, while the default OpenAI `getChatCompletion` and `mkPrompt` functions use a suggested
-`ModelConfig` type to describe the model parameters, you can create your own type as long as it
-extends `ModelConfigBase`. This can be useful if, for example, you need more parameters for your
-model or need to pass individualized information like userId.
