@@ -1,10 +1,10 @@
 # ts-prompt
 
 `ts-prompt` is a simple typescript library for constructing typesafe prompts for LLMs. Its inputs
-(template arguments), and outputs (zod-parsed results) are guaranteed to be correctly typed
-so that code changes and prompt changes cannot get out of sync. The patterns in this library were
-extracted from SchoolAI's large, working codebase and agentic system. It is provider-agnostic, but
-works well with OpenAI.
+(template arguments), and outputs (zod-parsed results) are guaranteed to be correctly typed so that
+code changes and prompt changes cannot get out of sync. The patterns in this library were extracted
+from SchoolAI's large, working codebase and agentic system. It is provider-agnostic, but works well
+with OpenAI.
 
 Note that it is not possible to take advantage of template placeholders if prompts are stored in a
 database--the prompts must be stored in the code itself so that typescript's powerful engine can
@@ -22,9 +22,10 @@ const mkPrompt = initPromptBuilder<
 
 const requestCourseMetadata = mkPrompt({
   template: `
-    You are an educational consultant. Extract the course or lesson name, subject, duration,
-    key topics, and target audience. If information is not available, do not make up details--
-    instead, report as null (or empty array if appropriate).
+    You are an educational consultant. Extract the course or lesson name,
+    subject, duration, key topics, and target audience. If information is
+    not available, do not make up details--instead, report as null (or
+    empty array if appropriate).
 
     Record your findings in the natural language {{language}}.
   `,
@@ -35,7 +36,7 @@ const requestCourseMetadata = mkPrompt({
       subject: z.string().nullable()
         .describe('The subject of the course or lesson.'),
       duration: z.string().nullable()
-        .describe('How long the course or lesson is, e.g. hours, days, or weeks.'),
+        .describe('How long the course or lesson is, e.g. hours, days.'),
       keyTopics: z.array(z.string())
         .describe('The key topics covered in the course or lesson.'),
       targetAudience: z.string().nullable()
@@ -44,9 +45,10 @@ const requestCourseMetadata = mkPrompt({
   )
 })
 
-// Note: the async `requestCourseMetadata` function above will require a `language` template
-// arg to be passed in, enforced by typescript. It also enforces that the response from the LLM
-// is a JSON object with the correct shape and types, parsed by the zod schema provided. The result
+// Note: the async `requestCourseMetadata` function above will require a
+// `language` template arg to be passed in, enforced by typescript. It
+// also enforces that the response from the LLM is a JSON object with the
+// correct shape and types, parsed by the zod schema provided. The result
 // is guaranteed to be typed correctly (or an error will be thrown).
 
 // Request the AI to provide a response
@@ -56,11 +58,12 @@ const details = await requestCourseMetadata({
       {
         role: 'user',
         content: `
-          The kindergarten class will be learning about the life cycle of a butterfly. The topic will
-          cover the different stages from egg, to caterpillar, to chrysalis, and finally to
-          butterfly. The lesson will include hands-on activities such as observing live caterpillars
-          and creating butterfly crafts. The target audience for this lesson is young children aged
-          4-6 years old.
+          The kindergarten class will be learning about the life cycle of a
+          butterfly. The topic will cover the different stages from egg, to
+          caterpillar, to chrysalis, and finally to butterfly. The lesson
+          will include hands-on activities such as observing live caterpillars
+          and creating butterfly crafts. The target audience for this lesson
+          is young children aged 4-6 years old.
         `
       }
     ],
@@ -70,9 +73,10 @@ const details = await requestCourseMetadata({
   // config: { temperature: 0.8 },
 })
 
-// Note: in this example, the user message will be appended by default to the system message,
-// before it is sent to the LLM for inference. But this is flexible--you can arrange or
-// rearrange the timeline however you need. See the `respondWithJson` function for more info.
+// Note: in this example, the user message will be appended by default to
+// the system message, before it is sent to the LLM for inference. But
+// this is flexible--you can arrange or rearrange the timeline however
+// you need. See the `respondWithJson` function for more info.
 
 console.log(details)
 // {
