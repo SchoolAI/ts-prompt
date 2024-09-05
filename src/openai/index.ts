@@ -1,4 +1,4 @@
-import type { ZodSchema } from 'zod'
+import type { ZodType, z } from 'zod'
 import type { OpenAI } from 'openai'
 import type {
   ChatCompletionCreateParamsNonStreaming,
@@ -83,8 +83,12 @@ export const respondWithString =
     (await $getTextInference(openai, params)).message.content
 
 export const respondWithJson =
-  (openai: OpenAI, schema: ZodSchema) =>
-  async ({ renderedTemplate, request, config }: OpenAIInferenceParams) => {
+  <T extends ZodType<any, any>>(openai: OpenAI, schema: T) =>
+  async ({
+    renderedTemplate,
+    request,
+    config,
+  }: OpenAIInferenceParams): Promise<z.infer<T>> => {
     const renderedWithJsonInstructions =
       renderedTemplate + '\n' + makeJsonTemplateString(schema)
 

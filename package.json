@@ -1,6 +1,6 @@
 {
   "name": "ts-prompt",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Typesafe prompt construction for LLM inference with zod-parsed results",
   "type": "module",
   "exports": {
