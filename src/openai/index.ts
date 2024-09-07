@@ -5,7 +5,7 @@ import type {
   ChatCompletionMessageParam,
 } from 'openai/resources/chat/completions'
 import type { ImageGenerateParams } from 'openai/resources/images.mjs'
-import { makeJsonTemplateString, stringToJsonSchema } from '../json'
+import { makeJsonTemplateString, stringToJsonSchema } from '../json.js'
 
 export type ChatRequest = {
   messages: ChatCompletionMessageParam[]

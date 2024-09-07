@@ -1,6 +1,6 @@
 import { z, ZodType } from 'zod'
 import { zodToJsonSchema } from 'zod-to-json-schema'
-import { unindent } from './unindent'
+import { unindent } from './unindent.js'
 
 export const literalSchema = z.union([
   z.string(),

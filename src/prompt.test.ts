@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { initPromptBuilder } from './prompt'
+import { initPromptBuilder } from './prompt.js'
 
 type ModelConfig = {
   provider: 'openai'

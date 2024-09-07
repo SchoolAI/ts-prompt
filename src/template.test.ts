@@ -1,5 +1,5 @@
 import { describe, test, expect } from 'vitest'
-import { Template, combineTemplates } from './template'
+import { Template, combineTemplates } from './template.js'
 
 describe('Testing Template', () => {
   test('Render a Template without placeholders', () => {

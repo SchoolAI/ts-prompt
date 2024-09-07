@@ -3,13 +3,13 @@ import { z } from 'zod'
 import { OpenAI } from 'openai'
 import type { ImageGenerateParams } from 'openai/resources/images.mjs'
 import type { ChatCompletionCreateParamsNonStreaming } from 'openai/resources/chat/completions'
-import { initPromptBuilder } from '../prompt'
+import { initPromptBuilder } from '../prompt.js'
 import {
   ChatRequest,
   respondWithImage,
   respondWithJson,
   respondWithString,
-} from '../openai'
+} from '../openai/index.js'
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 

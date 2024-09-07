@@ -1,4 +1,4 @@
-import { ExtractPlaceholders, IfNever, Template } from './template'
+import { ExtractPlaceholders, IfNever, Template } from './template.js'
 
 // Params are only needed when the Template has placeholders, so use a conditional type
 type PromptRequestArgs<C, X, P extends string> = IfNever<

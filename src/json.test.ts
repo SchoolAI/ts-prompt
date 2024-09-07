@@ -1,6 +1,6 @@
 import { describe, test, expect } from 'vitest'
 import { z } from 'zod'
-import { stringToJsonSchema } from './json'
+import { stringToJsonSchema } from './json.js'
 
 describe('stringToJsonSchema', () => {
   test('Converts string to json', () => {
