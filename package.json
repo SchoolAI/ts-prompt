@@ -1,6 +1,6 @@
 {
   "name": "ts-prompt",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Typesafe prompt construction for LLM inference with zod-parsed results",
   "type": "module",
   "exports": {
@@ -28,10 +28,7 @@
     "prepublishOnly": "pnpm build"
   },
   "tsup": {
-    "entry": [
-      "src/index.ts",
-      "src/openai/index.ts"
-    ],
+    "entry": ["src/index.ts", "src/openai/index.ts"],
     "splitting": false,
     "sourcemap": true,
     "clean": true
