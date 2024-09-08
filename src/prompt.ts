@@ -17,10 +17,13 @@ export type InferenceFn<C, X, O> = ({
   config: C
 }) => Promise<O>
 
-export const initPromptBuilder = <C, X = undefined>(defaultConfig: C) => {
+export const initPromptBuilder = <C, X = undefined>(
+  defaultBuilderConfig: C,
+) => {
   return <S extends string, F extends InferenceFn<C, X, any>>(
     template: S,
     infer: F,
+    defaultPromptConfig?: Partial<C>,
   ) => {
     type P = ExtractPlaceholders<S>
     type PlaceholderArgs = IfNever<P, undefined, { [key in P]: string }>
@@ -36,7 +39,11 @@ export const initPromptBuilder = <C, X = undefined>(defaultConfig: C) => {
         return await infer({
           renderedTemplate,
           request,
-          config: { ...defaultConfig, ...config },
+          config: {
+            ...defaultBuilderConfig,
+            ...defaultPromptConfig,
+            ...config,
+          },
         })
       } else {
         const { request, config } = args
@@ -52,7 +59,8 @@ export const initPromptBuilder = <C, X = undefined>(defaultConfig: C) => {
           renderedTemplate,
           request,
           config: {
-            ...defaultConfig,
+            ...defaultBuilderConfig,
+            ...defaultPromptConfig,
             ...config,
           },
         })

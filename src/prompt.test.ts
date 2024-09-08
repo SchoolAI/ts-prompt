@@ -36,6 +36,16 @@ describe('createPrompt', () => {
     ).toBe('hello earth')
   })
 
+  test('with default prompt config', async () => {
+    const request = mkPrompt(`hello`, async ({ config }) => config, {
+      model: 'gpt-4o',
+    })
+    expect(await request({ request: { value: '' } })).toStrictEqual({
+      provider: 'openai',
+      model: 'gpt-4o',
+    })
+  })
+
   test('with partial config', async () => {
     const request = mkPrompt(
       `hello`,
