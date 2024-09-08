@@ -1,6 +1,6 @@
 import { z, ZodType } from 'zod'
-import { zodToJsonSchema } from 'zod-to-json-schema'
 import { unindent } from './unindent.js'
+import { zodResponseFormat } from 'openai/helpers/zod'
 
 export const literalSchema = z.union([
   z.string(),
@@ -33,8 +33,18 @@ export const stringToJsonSchema = z
     }
   })
 
-export const makeJsonTemplateString = (schema: ZodType<any, any>) =>
+export const JSON_PROMPT = 'You must return the result as a JSON object.'
+
+export const SCHEMA_PROMPT =
+  'The result must strictly adhere to the following JSON schema:'
+
+export const makeJsonTemplateString = (schema: ZodType<any, any, any>) =>
   unindent(`
-    You must return the result as a JSON object. The result must strictly adhere to
-    the following JSON schema:\n
-  `) + JSON.stringify(zodToJsonSchema(schema), null, 2)
+    ${JSON_PROMPT}
+    ${SCHEMA_PROMPT}\n
+  `) +
+  JSON.stringify(
+    zodResponseFormat(schema, 'result').json_schema.schema,
+    null,
+    2,
+  )
