@@ -1,6 +1,6 @@
 {
   "name": "ts-prompt",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Typesafe prompt construction for LLM inference with zod-parsed results",
   "type": "module",
   "exports": {
@@ -19,6 +19,14 @@
       }
     }
   },
+  "files": [
+    "dist",
+    "src",
+    "package.json",
+    "tsconfig.json",
+    "LICENSE",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsup --format esm --dts",
     "typecheck": "tsc --noEmit --skipLibCheck",
