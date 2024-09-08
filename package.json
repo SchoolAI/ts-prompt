@@ -7,13 +7,17 @@
     ".": "./src/index.ts",
     "./openai": "./src/openai/index.js"
   },
-  "types": "./src/index.ts",
   "publishConfig": {
     "exports": {
-      ".": "./dist/index.js",
-      "./openai": "./dist/openai/index.js"
-    },
-    "types": "./dist/index.d.ts"
+      ".": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./openai": {
+        "types": "./dist/openai/index.d.ts",
+        "default": "./dist/openai/index.js"
+      }
+    }
   },
   "scripts": {
     "build": "tsup --format esm --dts",
@@ -24,7 +28,10 @@
     "prepublishOnly": "pnpm build"
   },
   "tsup": {
-    "entry": ["src/index.ts"],
+    "entry": [
+      "src/index.ts",
+      "src/openai/index.ts"
+    ],
     "splitting": false,
     "sourcemap": true,
     "clean": true
