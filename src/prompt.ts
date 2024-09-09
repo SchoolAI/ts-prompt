@@ -36,14 +36,15 @@ export const initPromptBuilder = <C, X = undefined>(
       if (tpl.placeholders.length === 0) {
         const { request, config } = args
         const renderedTemplate = tpl.render(undefined)
+        const mergedConfig = {
+          ...defaultBuilderConfig,
+          ...defaultPromptConfig,
+          ...config,
+        }
         return await infer({
           renderedTemplate,
           request,
-          config: {
-            ...defaultBuilderConfig,
-            ...defaultPromptConfig,
-            ...config,
-          },
+          config: mergedConfig,
         })
       } else {
         const { request, config } = args

@@ -57,9 +57,10 @@ export const $getTextInference = async (
 ) => {
   const joinMessages = request?.joinMessages ?? joinMessagesTop
 
+  const messages = joinMessages(renderedTemplate, request.messages)
   const result = await openai.chat.completions.create({
     ...config,
-    messages: joinMessages(renderedTemplate, request.messages),
+    messages,
   })
 
   const firstChoice = result.choices[0]
