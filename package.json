@@ -4,19 +4,13 @@
   "description": "Typesafe prompt construction for LLM inference with zod-parsed results",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./openai": "./src/openai/index.js"
-  },
-  "publishConfig": {
-    "exports": {
-      ".": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "./openai": {
-        "types": "./dist/openai/index.d.ts",
-        "default": "./dist/openai/index.js"
-      }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./openai": {
+      "types": "./dist/openai/index.d.ts",
+      "default": "./dist/openai/index.js"
     }
   },
   "files": [
