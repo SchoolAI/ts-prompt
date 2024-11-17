@@ -1,4 +1,4 @@
-import { assertEquals } from "jsr:@std/assert";
+import { assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
 import { makeJsonTemplateString, stringToJsonSchema } from "./json.ts";
 import { unindent } from "./unindent.ts";

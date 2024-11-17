@@ -1,9 +1,10 @@
-import { z, ZodType } from "zod";
-import { unindent } from "./unindent.ts";
+import { z, type ZodType } from "zod";
 import { zodResponseFormat } from "openai/helpers/zod";
-import { ResponseFormatJSONSchema } from "openai/resources/shared";
+import { unindent } from "./unindent.ts";
 
-export const literalSchema = z.union([
+const literalSchema: z.ZodUnion<
+  [z.ZodString, z.ZodNumber, z.ZodBoolean, z.ZodNull]
+> = z.union([
   z.string(),
   z.number(),
   z.boolean(),
@@ -19,7 +20,18 @@ export const jsonSchema: z.ZodType<Json> = z.lazy(() =>
 );
 
 // From https://github.com/JacobWeisenburger/zod_utilz (MIT License)
-export const stringToJsonSchema = z
+export const stringToJsonSchema: z.ZodEffects<
+  z.ZodString,
+  | string
+  | number
+  | boolean
+  | {
+    [key: string]: Json;
+  }
+  | Json[]
+  | null,
+  string
+> = z
   .string()
   .transform((str, ctx): z.infer<typeof jsonSchema> => {
     try {
@@ -39,11 +51,15 @@ export const JSON_PROMPT = "You must return the result as a JSON object.";
 export const SCHEMA_PROMPT =
   "The result must strictly adhere to the following JSON schema:";
 
-export const zodToJsonSchema = (schema: ZodType<any, any, any>) =>
+export const zodToJsonSchema = (
+  schema: ZodType,
+): Record<string, unknown> | undefined =>
   zodResponseFormat(schema, "result").json_schema
     .schema;
 
-export const makeJsonTemplateString = (schema: ZodType<any, any, any>) =>
+export const makeJsonTemplateString = (
+  schema: ZodType,
+): string =>
   unindent(`
     ${JSON_PROMPT}
     ${SCHEMA_PROMPT}\n

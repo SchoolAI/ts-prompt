@@ -1,4 +1,4 @@
-import { assert, assertEquals } from "jsr:@std/assert";
+import { assert, assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
 import { OpenAI } from "openai";
 import type { ImageGenerateParams } from "openai/resources/images.mjs";

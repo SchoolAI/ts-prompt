@@ -1,8 +1,13 @@
 {
+  "name": "@schoolai/ts-prompt",
+  "version": "0.4.0",
+  "license": "MIT",
+  "exports": "./mod.ts",
   "tasks": {
     "dev": "deno run -A mod.ts",
-    "test": "deno test -A --env-file=.env",
-    "build": "deno run -A build-npm.ts"
+    "test:all": "deno test -A --env-file=.env",
+    "test": "deno test -A --env-file=.env src/*.test.ts",
+    "build": "deno run -A build_npm.ts"
   },
   "imports": {
     "zod": "npm:zod@3.23.8",
