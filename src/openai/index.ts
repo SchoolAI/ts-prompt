@@ -1,22 +1,22 @@
-import type { ZodType, z } from 'zod'
+import type { z, ZodType } from "zod";
 import type {
   ChatCompletionCreateParamsNonStreaming,
   ChatCompletionMessageParam,
-} from 'openai/resources/chat/completions'
-import type { OpenAI } from 'openai'
-import type { ImageGenerateParams } from 'openai/resources/images.mjs'
-import { makeJsonTemplateString, stringToJsonSchema } from '../json.js'
+} from "openai/resources/chat/completions";
+import type { OpenAI } from "openai";
+import type { ImageGenerateParams } from "openai/resources/images.mjs";
+import { JSON_PROMPT, stringToJsonSchema, zodToJsonSchema } from "../json.ts";
 
 export type ChatRequest = {
-  messages: ChatCompletionMessageParam[]
-  joinMessages?: JoinMessagesFn
-}
+  messages: ChatCompletionMessageParam[];
+  joinMessages?: JoinMessagesFn;
+};
 
 export type OpenAIInferenceParams = {
-  renderedTemplate: string
-  request: ChatRequest
-  config: ChatCompletionCreateParamsNonStreaming
-}
+  renderedTemplate: string;
+  request: ChatRequest;
+  config: ChatCompletionCreateParamsNonStreaming;
+};
 
 export const $getImageInference = async (
   openai: OpenAI,
@@ -26,94 +26,103 @@ export const $getImageInference = async (
   const response = await openai.images.generate({
     ...config,
     prompt: renderedTemplate,
-  })
+  });
 
-  if (config.response_format === 'url') {
-    return response.data.map(d => d.url)
-  } else if (config.response_format === 'b64_json') {
-    return response.data.map(d => d.b64_json)
+  if (config.response_format === "url") {
+    return response.data.map((d) => d.url);
+  } else if (config.response_format === "b64_json") {
+    return response.data.map((d) => d.b64_json);
   }
 
-  return []
-}
+  return [];
+};
 
 export type JoinMessagesFn = (
   renderedTemplate: string,
   messages: ChatCompletionMessageParam[],
-) => ChatCompletionMessageParam[]
+) => ChatCompletionMessageParam[];
 export const joinMessagesTop: JoinMessagesFn = (renderedTemplate, messages) => {
-  return [{ role: 'system' as const, content: renderedTemplate }, ...messages]
-}
+  return [{ role: "system" as const, content: renderedTemplate }, ...messages];
+};
 export const joinMessagesBottom: JoinMessagesFn = (
   renderedTemplate,
   messages,
 ) => {
-  return [...messages, { role: 'system' as const, content: renderedTemplate }]
-}
+  return [...messages, { role: "system" as const, content: renderedTemplate }];
+};
 
 export const $getTextInference = async (
   openai: OpenAI,
   { renderedTemplate, request, config }: OpenAIInferenceParams,
 ) => {
-  const joinMessages = request?.joinMessages ?? joinMessagesTop
+  const joinMessages = request?.joinMessages ?? joinMessagesTop;
 
-  const messages = joinMessages(renderedTemplate, request.messages)
+  const messages = joinMessages(renderedTemplate, request.messages);
   const result = await openai.chat.completions.create({
     ...config,
     messages,
-  })
+  });
 
-  const firstChoice = result.choices[0]
-  if (!firstChoice) throw new Error('no completion results')
+  const firstChoice = result.choices[0];
+  if (!firstChoice) throw new Error("no completion results");
 
-  return firstChoice
-}
+  return firstChoice;
+};
 
 export const $getTextInferenceJson = async <T extends ZodType<any, any>>(
   openai: OpenAI,
   schema: T,
   { renderedTemplate, request, config }: OpenAIInferenceParams,
 ): Promise<z.infer<T>> => {
-  const renderedWithJsonInstructions =
-    renderedTemplate + '\n' + makeJsonTemplateString(schema)
+  const renderedWithJsonInstructions = renderedTemplate + "\n" + JSON_PROMPT;
 
   const completion = await $getTextInference(openai, {
     renderedTemplate: renderedWithJsonInstructions,
     request,
-    config: { ...config, response_format: { type: 'json_object' } },
-  })
+    config: {
+      ...config,
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "schema",
+          schema: zodToJsonSchema(schema),
+          strict: true,
+        },
+      },
+    },
+  });
 
-  return stringToJsonSchema.pipe(schema).parse(completion.message.content)
-}
+  return stringToJsonSchema.pipe(schema).parse(completion.message.content);
+};
 
 export const respondWithImage =
-  (openai: OpenAI, format: 'url' | 'b64_json') =>
+  (openai: OpenAI, format: "url" | "b64_json") =>
   async ({
     renderedTemplate,
     request,
     config,
   }: {
-    renderedTemplate: string
-    request: string
-    config: ImageGenerateParams
+    renderedTemplate: string;
+    request: string;
+    config: ImageGenerateParams;
   }) => {
-    const description = renderedTemplate + '\n' + request
+    const description = renderedTemplate + "\n" + request;
 
     return await $getImageInference(openai, description, {
       ...config,
       response_format: format,
-    })
-  }
+    });
+  };
 
 export const respondWithCompletion =
   (openai: OpenAI) => async (params: OpenAIInferenceParams) =>
-    await $getTextInference(openai, params)
+    await $getTextInference(openai, params);
 
 export const respondWithString =
   (openai: OpenAI) => async (params: OpenAIInferenceParams) =>
-    (await $getTextInference(openai, params)).message.content
+    (await $getTextInference(openai, params)).message.content;
 
 export const respondWithJson =
   <T extends ZodType<any, any>>(openai: OpenAI, schema: T) =>
   (params: OpenAIInferenceParams) =>
-    $getTextInferenceJson(openai, schema, params)
+    $getTextInferenceJson(openai, schema, params);

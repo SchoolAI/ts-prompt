@@ -1,81 +1,79 @@
-import { describe, test, expect } from 'vitest'
-import { initPromptBuilder } from './prompt.js'
+import { assertEquals } from "jsr:@std/assert";
+import { initPromptBuilder } from "./prompt.ts";
+const { test } = Deno;
 
 type ModelConfig = {
-  provider: 'openai'
-  model: 'gpt-3.5-turbo' | 'gpt-4o'
-}
+  provider: "openai";
+  model: "gpt-3.5-turbo" | "gpt-4o";
+};
 
 type Request = {
-  value: string
-}
+  value: string;
+};
 
 const defaultConfig: ModelConfig = {
-  provider: 'openai',
-  model: 'gpt-3.5-turbo',
-}
+  provider: "openai",
+  model: "gpt-3.5-turbo",
+};
 
-const mkPrompt = initPromptBuilder<ModelConfig, Request>(defaultConfig)
+const mkPrompt = initPromptBuilder<ModelConfig, Request>(defaultConfig);
 
-describe('createPrompt', () => {
-  test('without template args', async () => {
-    const request = mkPrompt(`hello`, async () => null)
-    expect(await request({ request: { value: '' } })).toBe(null)
-  })
+test("createPrompt without template args", async () => {
+  const request = mkPrompt(`hello`, async () => null);
+  const result = await request({ request: { value: "" } });
+  assertEquals(result, null);
+});
 
-  test('with template args', async () => {
-    const request = mkPrompt(
-      `hello {{world}}`,
-      async ({ renderedTemplate }) => renderedTemplate,
-    )
-    expect(
-      await request({
-        templateArgs: { world: 'earth' },
-        request: { value: '' },
-      }),
-    ).toBe('hello earth')
-  })
+test("with template args", async () => {
+  const request = mkPrompt(
+    `hello {{world}}`,
+    async ({ renderedTemplate }) => renderedTemplate,
+  );
+  const result = await request({
+    templateArgs: { world: "earth" },
+    request: { value: "" },
+  });
+  assertEquals(result, "hello earth");
+});
 
-  test('with default prompt config', async () => {
-    const request = mkPrompt(`hello`, async ({ config }) => config, {
-      model: 'gpt-4o',
-    })
-    expect(await request({ request: { value: '' } })).toStrictEqual({
-      provider: 'openai',
-      model: 'gpt-4o',
-    })
-  })
+test("with default prompt config", async () => {
+  const request = mkPrompt(`hello`, async ({ config }) => config, {
+    model: "gpt-4o",
+  });
+  const result = await request({ request: { value: "" } });
+  assertEquals(result, {
+    provider: "openai",
+    model: "gpt-4o",
+  });
+});
 
-  test('with partial config', async () => {
-    const request = mkPrompt(
-      `hello`,
-      async ({ config }) => `${config?.provider}/${config?.model}`,
-    )
-    expect(
-      await request({
-        request: { value: '' },
-        config: { model: 'gpt-4o' },
-      }),
-    ).toBe('openai/gpt-4o')
-  })
+test("with partial config", async () => {
+  const request = mkPrompt(
+    `hello`,
+    async ({ config }) => `${config?.provider}/${config?.model}`,
+  );
+  const result = await request({
+    request: { value: "" },
+    config: { model: "gpt-4o" },
+  });
+  assertEquals(result, "openai/gpt-4o");
+});
 
-  test('with request', async () => {
-    const request = mkPrompt(
-      `hello`,
-      async ({ request, config }) => `${config?.model} with ${request?.value}`,
-    )
-    expect(await request({ request: { value: 'context' } })).toBe(
-      'gpt-3.5-turbo with context',
-    )
-  })
+test("with request", async () => {
+  const request = mkPrompt(
+    `hello`,
+    async ({ request, config }) => `${config?.model} with ${request?.value}`,
+  );
+  const result = await request({ request: { value: "context" } });
+  assertEquals(result, "gpt-3.5-turbo with context");
+});
 
-  test('returns typed result', async () => {
-    type Result = { martians: number; earthlings: number }
-    const request = mkPrompt(`hello`, async () => ({
-      martians: 1,
-      earthlings: 2,
-    }))
-    const result: Result = await request({ request: { value: '' } })
-    expect(result).toStrictEqual({ martians: 1, earthlings: 2 })
-  })
-})
+test("returns typed result", async () => {
+  type Result = { martians: number; earthlings: number };
+  const request = mkPrompt(`hello`, async () => ({
+    martians: 1,
+    earthlings: 2,
+  }));
+  const result: Result = await request({ request: { value: "" } });
+  assertEquals(result, { martians: 1, earthlings: 2 });
+});

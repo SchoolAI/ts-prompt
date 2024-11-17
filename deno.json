@@ -1,0 +1,18 @@
+{
+  "tasks": {
+    "dev": "deno run -A mod.ts",
+    "test": "deno test -A --env-file=.env",
+    "build": "deno run -A build-npm.ts"
+  },
+  "imports": {
+    "zod": "npm:zod@3.23.8",
+    "openai": "npm:openai@4.55.5"
+  },
+  "compilerOptions": {
+    "lib": ["esnext", "dom", "deno.ns"]
+  },
+  "npmRegistry": "https://registry.npmjs.org",
+  "test": {
+    "include": ["src/**/*.test.ts"]
+  }
+}

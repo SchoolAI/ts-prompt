@@ -1,4 +1,4 @@
-import { unindent } from './unindent.js'
+import { unindent } from './unindent.ts'
 
 // Define a utility type that finds all curly-brace placeholders within a string and returns
 // them as a union type.

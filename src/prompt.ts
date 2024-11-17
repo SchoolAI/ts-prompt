@@ -1,4 +1,4 @@
-import { ExtractPlaceholders, IfNever, Template } from './template.js'
+import { ExtractPlaceholders, IfNever, Template } from './template.ts'
 
 // Params are only needed when the Template has placeholders, so use a conditional type
 type PromptRequestArgs<C, X, P extends string> = IfNever<
@@ -20,6 +20,7 @@ export type InferenceFn<C, X, O> = ({
 export const initPromptBuilder = <C, X = undefined>(
   defaultBuilderConfig: C,
 ) => {
+  console.log('~~~ initPromptBuilder ~~~')
   return <S extends string, F extends InferenceFn<C, X, any>>(
     template: S,
     infer: F,
