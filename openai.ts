@@ -5,7 +5,11 @@ import type {
 } from "openai/resources/chat/completions";
 import type { OpenAI } from "openai";
 import type { ImageGenerateParams } from "openai/resources/images.mjs";
-import { JSON_PROMPT, stringToJsonSchema, zodToJsonSchema } from "../json.ts";
+import {
+  JSON_PROMPT,
+  stringToJsonSchema,
+  zodToJsonSchema,
+} from "./src/json.ts";
 
 export type ChatRequest = {
   messages: ChatCompletionMessageParam[];
@@ -54,7 +58,7 @@ export const joinMessagesBottom: JoinMessagesFn = (
 export const $getTextInference = async (
   openai: OpenAI,
   { renderedTemplate, request, config }: OpenAIInferenceParams,
-) => {
+): Promise<OpenAI.Chat.Completions.ChatCompletion.Choice> => {
   const joinMessages = request?.joinMessages ?? joinMessagesTop;
 
   const messages = joinMessages(renderedTemplate, request.messages);
@@ -95,34 +99,47 @@ export const $getTextInferenceJson = async <T extends ZodType<any, any>>(
   return stringToJsonSchema.pipe(schema).parse(completion.message.content);
 };
 
-export const respondWithImage =
-  (openai: OpenAI, format: "url" | "b64_json") =>
-  async ({
-    renderedTemplate,
-    request,
-    config,
-  }: {
-    renderedTemplate: string;
-    request: string;
-    config: ImageGenerateParams;
-  }) => {
-    const description = renderedTemplate + "\n" + request;
+export const respondWithImage = (
+  openai: OpenAI,
+  format: "url" | "b64_json",
+): ({ renderedTemplate, request, config }: {
+  renderedTemplate: string;
+  request: string;
+  config: ImageGenerateParams;
+}) => Promise<(string | undefined)[]> =>
+async ({
+  renderedTemplate,
+  request,
+  config,
+}: {
+  renderedTemplate: string;
+  request: string;
+  config: ImageGenerateParams;
+}) => {
+  const description = renderedTemplate + "\n" + request;
 
-    return await $getImageInference(openai, description, {
-      ...config,
-      response_format: format,
-    });
-  };
+  return await $getImageInference(openai, description, {
+    ...config,
+    response_format: format,
+  });
+};
 
-export const respondWithCompletion =
-  (openai: OpenAI) => async (params: OpenAIInferenceParams) =>
-    await $getTextInference(openai, params);
+export const respondWithCompletion = (
+  openai: OpenAI,
+): (
+  params: OpenAIInferenceParams,
+) => Promise<OpenAI.Chat.Completions.ChatCompletion.Choice> =>
+async (params: OpenAIInferenceParams) =>
+  await $getTextInference(openai, params);
 
 export const respondWithString =
-  (openai: OpenAI) => async (params: OpenAIInferenceParams) =>
+  (openai: OpenAI): (params: OpenAIInferenceParams) => Promise<string | null> =>
+  async (params: OpenAIInferenceParams) =>
     (await $getTextInference(openai, params)).message.content;
 
-export const respondWithJson =
-  <T extends ZodType<any, any>>(openai: OpenAI, schema: T) =>
-  (params: OpenAIInferenceParams) =>
-    $getTextInferenceJson(openai, schema, params);
+export const respondWithJson = <T extends ZodType<any, any>>(
+  openai: OpenAI,
+  schema: T,
+): (params: OpenAIInferenceParams) => Promise<z.TypeOf<T>> =>
+(params: OpenAIInferenceParams) =>
+  $getTextInferenceJson(openai, schema, params);

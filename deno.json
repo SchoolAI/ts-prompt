@@ -1,8 +1,11 @@
 {
   "name": "@schoolai/ts-prompt",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "license": "MIT",
-  "exports": "./mod.ts",
+  "exports": {
+    ".": "./mod.ts",
+    "./openai.ts": "./openai.ts"
+  },
   "tasks": {
     "dev": "deno run -A mod.ts",
     "test:all": "deno test -A --env-file=.env",
