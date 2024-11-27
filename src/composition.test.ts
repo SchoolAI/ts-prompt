@@ -57,8 +57,9 @@ test("createPrompt and makeJsonRequest", async () => {
   );
 
   const result = await request({
-    templateArgs: { world: "earth" },
-    request: { timeline: ["first message", "second message"] },
+    world: "earth",
+  }, {
+    timeline: ["first message", "second message"],
   });
 
   assertEquals(result.messages, 2);

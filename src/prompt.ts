@@ -7,8 +7,8 @@ import {
 // Params are only needed when the Template has placeholders, so use a conditional type
 type PromptRequestArgs<X, P extends string> = IfNever<
   P,
-  { request?: Partial<X> },
-  { request?: Partial<X>; templateArgs: { [key in P]: string } }
+  [request?: Partial<X>],
+  [templateArgs: { [key in P]: string }, request?: Partial<X>]
 >;
 
 export type InferenceFn<X, O> = ({
@@ -24,7 +24,7 @@ type PromptBuilder<X> = <S extends string, F extends InferenceFn<X, any>>(
   infer: F,
   defaultRequest?: Partial<X>,
 ) => (
-  args: PromptRequestArgs<X, ExtractPlaceholders<S>>,
+  ...args: PromptRequestArgs<X, ExtractPlaceholders<S>>
 ) => Promise<Awaited<ReturnType<F>>>;
 
 export const initPromptBuilder = <X = undefined>(
@@ -41,10 +41,10 @@ export const initPromptBuilder = <X = undefined>(
     const tpl = Template.build(template);
 
     return async (
-      args: PromptRequestArgs<Partial<X>, P>,
+      ...args: PromptRequestArgs<X, P>
     ): Promise<Awaited<ReturnType<F>>> => {
       if (tpl.placeholders.length === 0) {
-        const { request } = args;
+        const [request] = args;
         const renderedTemplate = tpl.render(undefined);
         const mergedRequest = {
           ...defaultBuilderRequest,
@@ -56,14 +56,14 @@ export const initPromptBuilder = <X = undefined>(
           request: mergedRequest,
         });
       } else {
-        const { request } = args;
-        if (!("templateArgs" in args)) {
+        const [templateArgs, request] = args;
+        if (!templateArgs) {
           throw new Error(
             "Template has placeholders, so template args are required",
           );
         }
         const renderedTemplate = tpl.render(
-          args.templateArgs as PlaceholderArgs,
+          templateArgs as PlaceholderArgs,
         );
         return await infer({
           renderedTemplate,
