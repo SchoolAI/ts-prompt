@@ -3,13 +3,13 @@ import { z } from "zod";
 import { OpenAI } from "openai";
 import type { ImageGenerateParams } from "openai/resources/images.mjs";
 import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
-import { initPromptBuilder } from "../prompt.ts";
+import { initPromptBuilder } from "../src/prompt.ts";
 import {
-  ChatRequest,
+  type ChatRequest,
   respondWithImage,
   respondWithJson,
   respondWithString,
-} from "../openai/index.ts";
+} from "../openai.ts";
 import process from "node:process";
 
 const { test } = Deno;

@@ -99,27 +99,23 @@ export const $getTextInferenceJson = async <T extends ZodType<any, any>>(
   return stringToJsonSchema.pipe(schema).parse(completion.message.content);
 };
 
+type RespondWithImageParams = {
+  renderedTemplate: string;
+  request: ImageGenerateParams;
+};
 export const respondWithImage = (
   openai: OpenAI,
   format: "url" | "b64_json",
-): ({ renderedTemplate, request, config }: {
-  renderedTemplate: string;
-  request: string;
-  config: ImageGenerateParams;
-}) => Promise<(string | undefined)[]> =>
+): ({
+  renderedTemplate,
+  request,
+}: RespondWithImageParams) => Promise<(string | undefined)[]> =>
 async ({
   renderedTemplate,
   request,
-  config,
-}: {
-  renderedTemplate: string;
-  request: string;
-  config: ImageGenerateParams;
-}) => {
-  const description = renderedTemplate + "\n" + request;
-
-  return await $getImageInference(openai, description, {
-    ...config,
+}: RespondWithImageParams) => {
+  return await $getImageInference(openai, renderedTemplate, {
+    ...request,
     response_format: format,
   });
 };

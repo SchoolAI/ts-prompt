@@ -9,23 +9,24 @@ type ModelConfig = {
 
 type Request = {
   value: string;
-};
+} & ModelConfig;
 
-const defaultConfig: ModelConfig = {
+const defaultRequest: Request = {
+  value: "",
   provider: "openai",
   model: "gpt-3.5-turbo",
 };
 
-const mkPrompt = initPromptBuilder<ModelConfig, Request>(defaultConfig);
+const buildPrompt = initPromptBuilder<Request>(defaultRequest);
 
 test("createPrompt without template args", async () => {
-  const request = mkPrompt(`hello`, async () => null);
-  const result = await request({ request: { value: "" } });
+  const request = buildPrompt(`hello`, async () => null);
+  const result = await request({});
   assertEquals(result, null);
 });
 
 test("with template args", async () => {
-  const request = mkPrompt(
+  const request = buildPrompt(
     `hello {{world}}`,
     async ({ renderedTemplate }) => renderedTemplate,
   );
@@ -37,32 +38,32 @@ test("with template args", async () => {
 });
 
 test("with default prompt config", async () => {
-  const request = mkPrompt(`hello`, async ({ config }) => config, {
+  const request = buildPrompt(`hello`, async ({ request }) => request, {
     model: "gpt-4o",
   });
   const result = await request({ request: { value: "" } });
   assertEquals(result, {
+    value: "",
     provider: "openai",
     model: "gpt-4o",
   });
 });
 
 test("with partial config", async () => {
-  const request = mkPrompt(
+  const request = buildPrompt(
     `hello`,
-    async ({ config }) => `${config?.provider}/${config?.model}`,
+    async ({ request }) => `${request.provider}/${request.model}`,
   );
   const result = await request({
-    request: { value: "" },
-    config: { model: "gpt-4o" },
+    request: { model: "gpt-4o" },
   });
   assertEquals(result, "openai/gpt-4o");
 });
 
 test("with request", async () => {
-  const request = mkPrompt(
+  const request = buildPrompt(
     `hello`,
-    async ({ request, config }) => `${config?.model} with ${request?.value}`,
+    async ({ request }) => `${request.model} with ${request.value}`,
   );
   const result = await request({ request: { value: "context" } });
   assertEquals(result, "gpt-3.5-turbo with context");
@@ -70,7 +71,7 @@ test("with request", async () => {
 
 test("returns typed result", async () => {
   type Result = { martians: number; earthlings: number };
-  const request = mkPrompt(`hello`, async () => ({
+  const request = buildPrompt(`hello`, async () => ({
     martians: 1,
     earthlings: 2,
   }));
