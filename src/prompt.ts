@@ -4,11 +4,13 @@ import {
   Template,
 } from "./template.ts";
 
+type TemplateArgs<P extends string> = { [key in P]: string };
+
 // Params are only needed when the Template has placeholders, so use a conditional type
 type PromptRequestArgs<X, P extends string> = IfNever<
   P,
   [request?: Partial<X>],
-  [templateArgs: { [key in P]: string }, request?: Partial<X>]
+  [templateArgs: TemplateArgs<P>, request?: Partial<X>]
 >;
 
 export type InferenceFn<X, O> = ({
@@ -19,7 +21,20 @@ export type InferenceFn<X, O> = ({
   request: X;
 }) => Promise<O>;
 
-type PromptBuilder<X> = <S extends string, F extends InferenceFn<X, any>>(
+type InferenceWithArgsFn<X, P extends string, O> = ({
+  templateArgs,
+  renderedTemplate,
+  request,
+}: {
+  templateArgs: TemplateArgs<P> | undefined;
+  renderedTemplate: string;
+  request: X;
+}) => Promise<O>;
+
+type PromptBuilder<X> = <
+  S extends string,
+  F extends InferenceWithArgsFn<X, ExtractPlaceholders<S>, any>,
+>(
   template: S,
   infer: F,
   defaultRequest?: Partial<X>,
@@ -30,13 +45,15 @@ type PromptBuilder<X> = <S extends string, F extends InferenceFn<X, any>>(
 export const initPromptBuilder = <X = undefined>(
   defaultBuilderRequest: X,
 ): PromptBuilder<X> => {
-  return <S extends string, F extends InferenceFn<X, any>>(
+  return <
+    S extends string,
+    F extends InferenceWithArgsFn<X, ExtractPlaceholders<S>, any>,
+  >(
     template: S,
     infer: F,
     defaultPromptRequest?: Partial<X>,
   ) => {
     type P = ExtractPlaceholders<S>;
-    type PlaceholderArgs = IfNever<P, undefined, { [key in P]: string }>;
 
     const tpl = Template.build(template);
 
@@ -52,6 +69,7 @@ export const initPromptBuilder = <X = undefined>(
           ...request,
         };
         return await infer({
+          templateArgs: undefined,
           renderedTemplate,
           request: mergedRequest,
         });
@@ -63,9 +81,10 @@ export const initPromptBuilder = <X = undefined>(
           );
         }
         const renderedTemplate = tpl.render(
-          templateArgs as PlaceholderArgs,
+          templateArgs as IfNever<P, undefined, TemplateArgs<P>>,
         );
         return await infer({
+          templateArgs: templateArgs as TemplateArgs<P>,
           renderedTemplate,
           request: {
             ...defaultBuilderRequest,
