@@ -3,50 +3,47 @@ import { z } from "zod";
 import { OpenAI } from "openai";
 import type { ImageGenerateParams } from "openai/resources/images.mjs";
 import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
-import { initPromptBuilder } from "../src/prompt.ts";
+import { initPromptBuilder } from "./src/prompt.ts";
 import {
+  buildInferenceFunctionsForOpenAI,
   type ChatRequest,
-  respondWithImage,
-  respondWithJson,
-  respondWithString,
-} from "../openai.ts";
-import process from "node:process";
+} from "./openai.ts";
 
 const { test } = Deno;
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
-const mkPrompt = initPromptBuilder<
-  ChatCompletionCreateParamsNonStreaming,
-  ChatRequest
+const { respondWithImage, respondWithText, respondWithJson } =
+  buildInferenceFunctionsForOpenAI(openai);
+
+const buildPrompt = initPromptBuilder<
+  ChatRequest<ChatCompletionCreateParamsNonStreaming>
 >({
   messages: [],
   model: "gpt-4o",
-  stream: false,
 });
 
-test("mkPrompt - request content", async () => {
-  const requestContent = mkPrompt(
+test("buildPrompt - request content", async () => {
+  const requestContent = buildPrompt(
     `
       You are a professional AI assistant for teachers. Respond in the language {{language}}.
       Be helpful and kind, and extremely concise by answering with a single word or phrase,
       with no punctuation.
     `,
-    respondWithString(openai),
+    respondWithText(),
   );
 
   const capital = await requestContent({
-    request: {
-      messages: [{ role: "user", content: "What is the capital of France?" }],
-    },
-    templateArgs: { language: "English" },
+    language: "English",
+  }, {
+    messages: [{ role: "user", content: "What is the capital of France?" }],
   });
 
   assertEquals(capital, "Paris");
 });
 
-test("mkPrompt - requestJson", async () => {
-  const requestJson = mkPrompt(
+test("buildPrompt - requestJson", async () => {
+  const requestJson = buildPrompt(
     `
       You are an educational consultant. Extract the course or lesson name, subject, duration,
       key topics, and target audience. If information is not available, do not make up details--
@@ -55,7 +52,6 @@ test("mkPrompt - requestJson", async () => {
       Record your findings in the natural language {{language}}.
     `,
     respondWithJson(
-      openai,
       z.object({
         name: z
           .string()
@@ -80,8 +76,9 @@ test("mkPrompt - requestJson", async () => {
     ),
   );
 
-  const details = await requestJson({
-    request: {
+  const details = await requestJson(
+    { language: "English" },
+    {
       messages: [
         {
           role: "user",
@@ -95,30 +92,30 @@ test("mkPrompt - requestJson", async () => {
         },
       ],
     },
-    templateArgs: { language: "English" },
-  });
+  );
 
   assert(details);
 });
 
-const mkImage = initPromptBuilder<ImageGenerateParams, string>({
+const buildImagePrompt = initPromptBuilder<ImageGenerateParams>({
   prompt: "",
   model: "dall-e-2",
   size: "256x256",
   response_format: "url",
 });
 
-test("mkImage - request", async () => {
-  const request = mkImage(
+test("buildImagePrompt - request", async () => {
+  const imagePrompt = buildImagePrompt(
     `
+    {{request}}.
     Create a beautiful, flat color image suitable for iconography.
     Make it in the style of '{{style}}'.
-  `,
-    respondWithImage(openai, "url"),
+    `,
+    respondWithImage("url"),
   );
 
-  const images = await request({
-    templateArgs: { style: "absurdism" },
+  const images = await imagePrompt({
+    style: "absurdism",
     request: "a red apple",
   });
 

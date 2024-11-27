@@ -8,7 +8,7 @@
   },
   "tasks": {
     "dev": "deno run -A mod.ts",
-    "test:all": "deno test -A --env-file=.env",
+    "test:all": "deno test -A --env-file=.env src/*.test.ts *.integration.ts",
     "test": "deno test -A --env-file=.env src/*.test.ts",
     "build": "deno run -A build_npm.ts"
   },

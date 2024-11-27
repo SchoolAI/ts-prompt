@@ -10,7 +10,7 @@ type PromptRequest = {
   model: "gpt-3.5-turbo" | "gpt-4o";
 };
 
-const mkPrompt = initPromptBuilder<PromptRequest>({
+const buildPrompt = initPromptBuilder<PromptRequest>({
   timeline: [],
   provider: "openai",
   model: "gpt-3.5-turbo",
@@ -51,7 +51,7 @@ test("createPrompt and makeJsonRequest", async () => {
     return `{"messages": ${messages}, "martians": ${martians}, "comment": "${comment}"}`;
   };
 
-  const request = mkPrompt(
+  const request = buildPrompt(
     `hello {{world}}`,
     makeJsonRequest(resultSchema, chatCompletion),
   );

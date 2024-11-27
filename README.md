@@ -15,12 +15,12 @@ extract placeholders in the prompt template and create type consistency across t
 ```typescript
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
 
-const mkPrompt = initPromptBuilder<
+const buildPrompt = initPromptBuilder<
   ChatCompletionCreateParamsNonStreaming,
   ChatRequest
 >({ messages: [], model: 'gpt-3.5-turbo', stream: false, })
 
-const requestCourseMetadata = mkPrompt({
+const requestCourseMetadata = buildPrompt({
   template: `
     You are an educational consultant. Extract the course or lesson name,
     subject, duration, key topics, and target audience. If information is
@@ -92,39 +92,38 @@ console.log(details)
 
 `ts-prompt` is very flexible around what inference engine or LLM it uses, how it logs information,
 and what kind of model config it uses. In order to have this much flexibility, the first thing
-you need to create is a function that builds prompts, e.g. `mkPrompt` or `mkImagePrompt` (you can
-name it what you like):
+you need to create is a function that builds prompts, e.g. `buildPrompt` or `buildImagePrompt`
+(you can name it what you like):
 
 ```typescript
-import { OpenAI } from 'openai';
-import { initPromptBuilder } from 'ts-prompt';
+import { OpenAI } from "openai";
+import { initPromptBuilder } from "ts-prompt";
 
 // Initialize OpenAI client with API key
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
-// Initialize the `mkImagePrompt` function with default configuration
-const mkImagePrompt = initPromptBuilder<ImageGenerateParams, string>({
-  prompt: '',
-  model: 'dall-e-2',
-  size: '256x256',
-  response_format: 'url',
-})
+// Initialize the `buildImagePrompt` function with default configuration
+const buildImagePrompt = initPromptBuilder<ImageGenerateParams, string>({
+  prompt: "",
+  model: "dall-e-2",
+  size: "256x256",
+  response_format: "url",
+});
 
-// now use `mkImagePrompt` to define a typesafe, specific image prompt:
-const requestGenerateIcon = mkImagePrompt(
+// now use `buildImagePrompt` to define a typesafe, specific image prompt:
+const requestGenerateIcon = buildImagePrompt(
   `
   Create a beautiful, flat color image suitable for iconography.
   Make it in the style of '{{style}}'.
 `,
-  respondWithImage(openai, 'url'),
-)
+  respondWithImage(openai, "url"),
+);
 
 // finally, use the `requestGenerateIcon` function to request an image:
 const images = await requestGenerateIcon({
-  templateArgs: { style: 'absurdism' },
-  request: 'a red apple',
-})
-
+  templateArgs: { style: "absurdism" },
+  request: "a red apple",
+});
 ```
 
 You can create your own `respondWithImage` function if you want to use a different inference

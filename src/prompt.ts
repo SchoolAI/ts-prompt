@@ -20,7 +20,7 @@ export type InferenceFn<X, P extends string, O> = ({
   request: X;
 }) => Promise<O>;
 
-export const initPromptBuilder = <X = undefined>(
+export const initPromptBuilder = <X>(
   defaultBuilderRequest: X,
 ): PromptBuilder<X> => {
   return <
