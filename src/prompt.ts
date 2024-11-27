@@ -6,13 +6,6 @@ import {
 
 export type TemplateArgs<P extends string> = { [key in P]: string };
 
-// Params are only needed when the Template has placeholders, so use a conditional type
-type PromptRequestArgs<X, P extends string> = IfNever<
-  P,
-  [request?: Partial<X>],
-  [templateArgs: TemplateArgs<P>, request?: Partial<X>]
->;
-
 export type InferenceFn<X, P extends string, O> = ({
   templateArgs,
   renderedTemplate,
@@ -27,23 +20,12 @@ export type InferenceFn<X, P extends string, O> = ({
   request: X;
 }) => Promise<O>;
 
-type PromptBuilder<X> = <
-  S extends string,
-  F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
->(
-  template: S,
-  infer: F,
-  defaultRequest?: Partial<X>,
-) => (
-  ...args: PromptRequestArgs<X, ExtractPlaceholders<S>>
-) => Promise<Awaited<ReturnType<F>>>;
-
 export const initPromptBuilder = <X = undefined>(
   defaultBuilderRequest: X,
 ): PromptBuilder<X> => {
   return <
     S extends string,
-    F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
+    F extends PromptParams<X, S>["infer"],
   >(
     template: S,
     infer: F,
@@ -53,9 +35,7 @@ export const initPromptBuilder = <X = undefined>(
 
     const tpl = Template.build(template);
 
-    return async (
-      ...args: PromptRequestArgs<X, P>
-    ): Promise<Awaited<ReturnType<F>>> => {
+    const promptFn: PromptFn<X, S, F> = async (...args) => {
       if (tpl.placeholders.length === 0) {
         const [request] = args;
         const renderedTemplate = tpl.render(undefined);
@@ -94,5 +74,39 @@ export const initPromptBuilder = <X = undefined>(
         });
       }
     };
+
+    return promptFn;
   };
 };
+
+// Helper types
+
+// Params are only needed when the Template has placeholders, so use a conditional type
+type PromptRequestArgs<X, P extends string> = IfNever<
+  P,
+  [request?: Partial<X>],
+  [templateArgs: TemplateArgs<P>, request?: Partial<X>]
+>;
+
+type PromptParams<X, S extends string> = {
+  template: S;
+  infer: InferenceFn<X, ExtractPlaceholders<S>, any>;
+  defaultRequest?: Partial<X>;
+};
+
+type PromptBuilder<X> = <
+  S extends string,
+  F extends PromptParams<X, S>["infer"],
+>(
+  template: S,
+  infer: F,
+  defaultRequest?: Partial<X>,
+) => PromptFn<X, S, F>;
+
+type PromptFn<
+  X,
+  S extends string,
+  F extends PromptParams<X, S>["infer"],
+> = (
+  ...args: PromptRequestArgs<X, ExtractPlaceholders<S>>
+) => Promise<Awaited<ReturnType<F>>>;
