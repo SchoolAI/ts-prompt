@@ -4,7 +4,7 @@ import {
   Template,
 } from "./template.ts";
 
-type TemplateArgs<P extends string> = { [key in P]: string };
+export type TemplateArgs<P extends string> = { [key in P]: string };
 
 // Params are only needed when the Template has placeholders, so use a conditional type
 type PromptRequestArgs<X, P extends string> = IfNever<
@@ -13,27 +13,23 @@ type PromptRequestArgs<X, P extends string> = IfNever<
   [templateArgs: TemplateArgs<P>, request?: Partial<X>]
 >;
 
-export type InferenceFn<X, O> = ({
-  renderedTemplate,
-  request,
-}: {
-  renderedTemplate: string;
-  request: X;
-}) => Promise<O>;
-
-type InferenceWithArgsFn<X, P extends string, O> = ({
+export type InferenceFn<X, P extends string, O> = ({
   templateArgs,
   renderedTemplate,
+  builderRequest,
+  promptRequest,
   request,
 }: {
   templateArgs: TemplateArgs<P> | undefined;
   renderedTemplate: string;
+  builderRequest: X;
+  promptRequest: Partial<X> | undefined;
   request: X;
 }) => Promise<O>;
 
 type PromptBuilder<X> = <
   S extends string,
-  F extends InferenceWithArgsFn<X, ExtractPlaceholders<S>, any>,
+  F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
 >(
   template: S,
   infer: F,
@@ -47,7 +43,7 @@ export const initPromptBuilder = <X = undefined>(
 ): PromptBuilder<X> => {
   return <
     S extends string,
-    F extends InferenceWithArgsFn<X, ExtractPlaceholders<S>, any>,
+    F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
   >(
     template: S,
     infer: F,
@@ -71,6 +67,8 @@ export const initPromptBuilder = <X = undefined>(
         return await infer({
           templateArgs: undefined,
           renderedTemplate,
+          builderRequest: defaultBuilderRequest,
+          promptRequest: defaultPromptRequest,
           request: mergedRequest,
         });
       } else {
@@ -86,6 +84,8 @@ export const initPromptBuilder = <X = undefined>(
         return await infer({
           templateArgs: templateArgs as TemplateArgs<P>,
           renderedTemplate,
+          builderRequest: defaultBuilderRequest,
+          promptRequest: defaultPromptRequest,
           request: {
             ...defaultBuilderRequest,
             ...defaultPromptRequest,

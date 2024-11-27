@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1.0.8";
 import { z, type ZodSchema } from "zod";
-import { type InferenceFn, initPromptBuilder } from "./prompt.ts";
+import { type InferenceFn, initPromptBuilder, TemplateArgs } from "./prompt.ts";
 import { makeJsonTemplateString, stringToJsonSchema } from "./json.ts";
 const { test } = Deno;
 
@@ -22,24 +22,24 @@ const resultSchema = z.object({
   comment: z.string(),
 });
 
-const makeJsonRequest = <X>(
+const makeJsonRequest = <X, P extends string>(
   schema: ZodSchema,
-  infer: InferenceFn<X, string>,
-): InferenceFn<X, z.infer<typeof schema>> =>
-async ({ request, renderedTemplate }) => {
-  const renderedWithJsonInstructions = renderedTemplate + "\n" +
+  infer: InferenceFn<X, P, string>,
+): InferenceFn<X, P, z.infer<typeof schema>> =>
+async (params) => {
+  const renderedWithJsonInstructions = params.renderedTemplate + "\n" +
     makeJsonTemplateString(schema);
 
   const result = await infer({
+    ...params,
     renderedTemplate: renderedWithJsonInstructions,
-    request,
   });
 
   return stringToJsonSchema.pipe(schema).parse(result);
 };
 
 test("createPrompt and makeJsonRequest", async () => {
-  const chatCompletion: InferenceFn<PromptRequest, string> = async ({
+  const chatCompletion: InferenceFn<PromptRequest, string, string> = async ({
     renderedTemplate,
     request,
   }) => {
