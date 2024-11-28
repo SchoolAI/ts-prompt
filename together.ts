@@ -8,22 +8,21 @@ import {
   type Message,
 } from "./src/utils.ts";
 import { makeJsonTemplateString } from "./src/json.ts";
+import type { InferenceParams } from "./src/prompt.ts";
 
-export type ImageInferenceParams<Together extends TogetherInterface> = {
-  renderedTemplate: string;
-  request: Parameters<Together["images"]["create"]>[0];
-};
+export type ImageInferenceParams<Together extends TogetherInterface> =
+  InferenceParams<Parameters<Together["images"]["create"]>[0], string>;
 
 export type ChatInferenceParams<
   Together extends TogetherInterface,
   M extends Message,
-> = {
-  renderedTemplate: string;
-  request: ChatRequest<
+> = InferenceParams<
+  ChatRequest<
     Parameters<Together["chat"]["completions"]["create"]>[0],
     M
-  >;
-};
+  >,
+  string
+>;
 
 export type ChatInferenceResult<Together extends TogetherInterface> = Awaited<
   ReturnType<Together["chat"]["completions"]["create"]>
@@ -59,13 +58,13 @@ export const buildInferenceFunctionsForTogether:
     type ImageParamBody = Parameters<ImageFn>[0];
     type IR = ImageRequest<ImageParamBody>;
 
-    type ImageParams = { renderedTemplate: string; request: IR };
-    type ChatParams = { renderedTemplate: string; request: CR };
+    type ImageInferenceParams = InferenceParams<IR, string>;
+    type ChatInferenceParams = InferenceParams<CR, string>;
 
-    const $inferImage = async (
-      renderedTemplate: string,
-      request: IR,
-    ): Promise<ImageResult> => {
+    const $inferImage = async ({
+      renderedTemplate,
+      request,
+    }: ImageInferenceParams): Promise<ImageResult> => {
       const response = await together.images.create({
         ...request,
         prompt: renderedTemplate,
@@ -80,10 +79,10 @@ export const buildInferenceFunctionsForTogether:
       return [];
     };
 
-    const $inferChoice = async (
-      renderedTemplate: string,
-      request: CR,
-    ): Promise<ChatResult> => {
+    const $inferChoice = async ({
+      renderedTemplate,
+      request,
+    }: ChatInferenceParams): Promise<ChatResult> => {
       const joinMessages: JoinMessagesFn<M> = request?.joinMessages ??
         joinMessagesTop;
 
@@ -105,32 +104,34 @@ export const buildInferenceFunctionsForTogether:
 
     const $inferJson = async <T extends ZodType>(
       schema: T,
-      renderedTemplate: string,
-      request: CR,
+      params: ChatInferenceParams,
     ): Promise<z.infer<T>> => {
       let choice: ChatResult;
-      if (jsonModeSupportedModels.includes(request.model)) {
+      if (jsonModeSupportedModels.includes(params.request.model)) {
         // For models that support JSON mode, we'll use the JSON schema directly
-        const renderedWithJsonInstructions = renderedTemplate + "\n" +
+        const renderedWithJsonInstructions = params.renderedTemplate + "\n" +
           JSON_PROMPT;
         choice = await $inferChoice(
-          renderedWithJsonInstructions,
           {
-            ...request,
-            response_format: {
-              type: "json_object",
-              schema: zodToJsonSchema(schema),
+            ...params,
+            renderedTemplate: renderedWithJsonInstructions,
+            request: {
+              ...params.request,
+              response_format: {
+                type: "json_object",
+                schema: zodToJsonSchema(schema),
+              },
             },
           },
         );
       } else {
         // For models that don't support JSON mode, we'll include the JSON schema in the prompt
-        const renderedWithJsonInstructions = renderedTemplate + "\n" +
+        const renderedWithJsonInstructions = params.renderedTemplate + "\n" +
           makeJsonTemplateString(schema);
-        choice = await $inferChoice(
-          renderedWithJsonInstructions,
-          request,
-        );
+        choice = await $inferChoice({
+          ...params,
+          renderedTemplate: renderedWithJsonInstructions,
+        });
       }
 
       return stringToJsonSchema.pipe(schema).parse(choice.message?.content);
@@ -138,34 +139,28 @@ export const buildInferenceFunctionsForTogether:
 
     const respondWithImage = (
       format: "url" | "b64_json" = "url",
-    ): (
-      params: ImageParams,
-    ) => Promise<(string | undefined)[]> =>
+    ) =>
     async (
-      params: ImageParams,
+      params: ImageInferenceParams,
     ) => {
-      return await $inferImage(params.renderedTemplate, {
-        ...params.request,
-        response_format: format,
+      return await $inferImage({
+        ...params,
+        request: {
+          ...params.request,
+          response_format: format,
+        },
       });
     };
 
-    const respondWithChoice =
-      (): (params: ChatParams) => Promise<ChatResult> =>
-      async (params: ChatParams) =>
-        await $inferChoice(params.renderedTemplate, params.request);
+    const respondWithChoice = () => async (params: ChatInferenceParams) =>
+      await $inferChoice(params);
 
-    const respondWithText =
-      (): (params: ChatParams) => Promise<string | null> =>
-      async (params: ChatParams) =>
-        (await $inferChoice(params.renderedTemplate, params.request)).message
-          ?.content ?? null;
+    const respondWithText = () => async (params: ChatInferenceParams) =>
+      (await $inferChoice(params)).message?.content ?? null;
 
-    const respondWithJson = <T extends ZodType>(
-      schema: T,
-    ): (params: ChatParams) => Promise<z.TypeOf<T>> =>
-    (params: ChatParams) =>
-      $inferJson(schema, params.renderedTemplate, params.request);
+    const respondWithJson =
+      <T extends ZodType>(schema: T) => (params: ChatInferenceParams) =>
+        $inferJson(schema, params);
 
     return {
       $inferImage,
@@ -214,39 +209,35 @@ type TogetherInterface = {
   };
 };
 
+// deno-fmt-ignore
 type BuildInferenceFunctionsForTogether = <
   Together extends TogetherInterface,
   M extends Message,
 >(
   openai: Together,
 ) => {
-  $inferImage: (
-    renderedTemplate: string,
-    request: ImageInferenceParams<Together>["request"],
-  ) => Promise<(string | undefined)[]>;
-  $inferChoice: (
-    renderedTemplate: string,
-    request: ChatInferenceParams<Together, M>["request"],
-  ) => Promise<ChatInferenceResult<Together>>;
-  $inferJson: <T extends ZodType>(
-    schema: T,
-    renderedTemplate: string,
-    request: ChatInferenceParams<Together, M>["request"],
-  ) => Promise<z.infer<T>>;
-  respondWithImage: (
-    format?: "url" | "b64_json",
-  ) => (
-    params: ImageInferenceParams<Together>,
-  ) => Promise<(string | undefined)[]>;
-  respondWithChoice: () => (
-    params: ChatInferenceParams<Together, M>,
-  ) => Promise<
-    ChatInferenceResult<Together>
-  >;
-  respondWithText: () => (
-    params: ChatInferenceParams<Together, M>,
-  ) => Promise<string | null>;
-  respondWithJson: <T extends ZodType>(
-    schema: T,
-  ) => (params: ChatInferenceParams<Together, M>) => Promise<z.TypeOf<T>>;
+  $inferImage: (params: ImageInferenceParams<Together>) =>
+    Promise<(string | undefined)[]>;
+
+  $inferChoice: (params: ChatInferenceParams<Together, M>) =>
+    Promise<ChatInferenceResult<Together>>;
+
+  $inferJson: <T extends ZodType>(schema: T, params: ChatInferenceParams<Together, M>) =>
+    Promise<z.infer<T>>;
+
+  respondWithImage: (format?: "url" | "b64_json") =>
+    (params: ImageInferenceParams<Together>) =>
+      Promise<(string | undefined)[]>;
+
+  respondWithChoice: () =>
+    (params: ChatInferenceParams<Together, M>) =>
+      Promise<ChatInferenceResult<Together>>;
+
+  respondWithText: () =>
+    (params: ChatInferenceParams<Together, M>) =>
+      Promise<string | null>;
+
+  respondWithJson: <T extends ZodType>(schema: T) =>
+    (params: ChatInferenceParams<Together, M>) =>
+      Promise<z.infer<T>>;
 };

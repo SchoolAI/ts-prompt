@@ -6,6 +6,14 @@ import {
 
 export type TemplateArgs<P extends string> = { [key in P]: string };
 
+export type InferenceParams<X, P extends string> = {
+  templateArgs: TemplateArgs<P> | undefined;
+  renderedTemplate: string;
+  builderRequest: X;
+  promptRequest: Partial<X> | undefined;
+  request: X;
+};
+
 /**
  * The type signature of an "inference" function. An inference function is an adapter that takes
  * a rendered template string and a request object, and returns a promise of the inferred output.
@@ -22,13 +30,7 @@ export type InferenceFn<X, P extends string, O> = ({
   builderRequest,
   promptRequest,
   request,
-}: {
-  templateArgs: TemplateArgs<P> | undefined;
-  renderedTemplate: string;
-  builderRequest: X;
-  promptRequest: Partial<X> | undefined;
-  request: X;
-}) => Promise<O>;
+}: InferenceParams<X, P>) => Promise<O>;
 
 /**
  * The main function to create a prompt. This function is curried, and the first call creates a
@@ -60,7 +62,7 @@ export const initPromptBuilder = <X>(
 ): PromptBuilder<X> => {
   return <
     S extends string,
-    F extends PromptParams<X, S>["infer"],
+    F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
   >(
     template: S,
     infer: F,
@@ -123,15 +125,9 @@ type PromptRequestArgs<X, P extends string> = IfNever<
   [templateArgs: TemplateArgs<P>, request?: Partial<X>]
 >;
 
-type PromptParams<X, S extends string> = {
-  template: S;
-  infer: InferenceFn<X, ExtractPlaceholders<S>, any>;
-  defaultRequest?: Partial<X>;
-};
-
 type PromptBuilder<X> = <
   S extends string,
-  F extends PromptParams<X, S>["infer"],
+  F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
 >(
   template: S,
   infer: F,
@@ -141,7 +137,7 @@ type PromptBuilder<X> = <
 type PromptFn<
   X,
   S extends string,
-  F extends PromptParams<X, S>["infer"],
+  F extends InferenceFn<X, ExtractPlaceholders<S>, any>,
 > = (
   ...args: PromptRequestArgs<X, ExtractPlaceholders<S>>
 ) => Promise<Awaited<ReturnType<F>>>;
