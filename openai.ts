@@ -1,40 +1,13 @@
 import type { z, ZodType } from "zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
+import { JSON_PROMPT, stringToJsonSchema } from "./src/json.ts";
 import {
-  JSON_PROMPT,
-  stringToJsonSchema,
-  zodToJsonSchema,
-} from "./src/json.ts";
-
-export type ChatRequest<P, M = unknown> = P & {
-  messages: M[];
-  joinMessages?: JoinMessagesFn<M>;
-};
-
-export type ImageRequest<P> = P;
-
-export type JoinMessagesFn<M> = (
-  renderedTemplate: string,
-  messages: M[],
-) => M[];
-
-export const joinMessagesTop = <M>(
-  renderedTemplate: string,
-  messages: (SystemMessage | M)[],
-): (SystemMessage | M)[] => {
-  return [{ role: "system", content: renderedTemplate }, ...messages];
-};
-
-export const joinMessagesBottom = <M>(
-  renderedTemplate: string,
-  messages: (SystemMessage | M)[],
-): (SystemMessage | M)[] => {
-  return [...messages, { role: "system", content: renderedTemplate }];
-};
-
-export type OpenAIInferenceParams<Request> = {
-  renderedTemplate: string;
-  request: Request;
-};
+  type ChatRequest,
+  type ImageRequest,
+  JoinMessagesFn,
+  joinMessagesTop,
+  type Message,
+} from "./src/utils.ts";
 
 export type OpenAIInterface = {
   images: {
@@ -56,6 +29,7 @@ export type OpenAIInterface = {
 export const buildInferenceFunctionsForOpenAI:
   BuildInferenceFunctionsForOpenAI = <
     OpenAI extends OpenAIInterface,
+    M extends Message,
   >(
     openai: OpenAI,
   ) => {
@@ -63,7 +37,7 @@ export const buildInferenceFunctionsForOpenAI:
     type ChatResult = Awaited<ReturnType<ChatFn>>["choices"][number];
     type ChatParamBody = Parameters<ChatFn>[0];
     type ChatResultMessage = ChatResult["message"];
-    type CR = ChatRequest<ChatParamBody, ChatResultMessage>;
+    type CR = ChatRequest<ChatParamBody, M>;
 
     type ImageFn = OpenAI["images"]["generate"];
     type ImageResult = (string | undefined)[];
@@ -95,9 +69,14 @@ export const buildInferenceFunctionsForOpenAI:
       renderedTemplate: string,
       request: CR,
     ): Promise<ChatResult> => {
-      const joinMessages = request?.joinMessages ?? joinMessagesTop;
+      const joinMessages: JoinMessagesFn<M> = request?.joinMessages ??
+        joinMessagesTop;
 
-      const messages = joinMessages(renderedTemplate, request.messages);
+      const messages = joinMessages(
+        renderedTemplate,
+        request.messages,
+        (content) => ({ content, role: "system" } as M),
+      );
       const result = await openai.chat.completions.create({
         ...request,
         messages,
@@ -177,11 +156,6 @@ export const buildInferenceFunctionsForOpenAI:
     };
   };
 
-type SystemMessage = {
-  role: "system";
-  content: string;
-};
-
 type ImagesResponse = {
   created: number;
   data: { b64_json?: string; url?: string }[];
@@ -198,7 +172,10 @@ type Completion = {
 
 // This remarkable type signature was generated via "deno task build" and then by copying
 // the type from npm/esm/openai.d.ts
-type BuildInferenceFunctionsForOpenAI = <OpenAI extends OpenAIInterface>(
+type BuildInferenceFunctionsForOpenAI = <
+  OpenAI extends OpenAIInterface,
+  M extends Message,
+>(
   openai: OpenAI,
 ) => {
   $inferImage: (
@@ -209,9 +186,7 @@ type BuildInferenceFunctionsForOpenAI = <OpenAI extends OpenAIInterface>(
     renderedTemplate: string,
     request: ChatRequest<
       Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      Awaited<
-        ReturnType<OpenAI["chat"]["completions"]["create"]>
-      >["choices"][number]["message"]
+      M
     >,
   ) => Promise<
     Awaited<
@@ -223,9 +198,7 @@ type BuildInferenceFunctionsForOpenAI = <OpenAI extends OpenAIInterface>(
     renderedTemplate: string,
     request: ChatRequest<
       Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      Awaited<
-        ReturnType<OpenAI["chat"]["completions"]["create"]>
-      >["choices"][number]["message"]
+      M
     >,
   ) => Promise<z.infer<T>>;
   respondWithImage: (format?: "url" | "b64_json") => (params: {
@@ -236,9 +209,7 @@ type BuildInferenceFunctionsForOpenAI = <OpenAI extends OpenAIInterface>(
     renderedTemplate: string;
     request: ChatRequest<
       Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      Awaited<
-        ReturnType<OpenAI["chat"]["completions"]["create"]>
-      >["choices"][number]["message"]
+      M
     >;
   }) => Promise<
     Awaited<
@@ -249,18 +220,14 @@ type BuildInferenceFunctionsForOpenAI = <OpenAI extends OpenAIInterface>(
     renderedTemplate: string;
     request: ChatRequest<
       Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      Awaited<
-        ReturnType<OpenAI["chat"]["completions"]["create"]>
-      >["choices"][number]["message"]
+      M
     >;
   }) => Promise<string | null>;
   respondWithJson: <T extends ZodType>(schema: T) => (params: {
     renderedTemplate: string;
     request: ChatRequest<
       Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      Awaited<
-        ReturnType<OpenAI["chat"]["completions"]["create"]>
-      >["choices"][number]["message"]
+      M
     >;
   }) => Promise<z.TypeOf<T>>;
 };

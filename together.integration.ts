@@ -1,27 +1,27 @@
+import Together from "npm:together-ai@0.10.0";
 import { assert, assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
-import { OpenAI } from "npm:openai@4.55.5";
-import type { ImageGenerateParams } from "npm:openai@4.55.5/resources/images.mjs";
-import type { ChatCompletionCreateParamsNonStreaming } from "npm:openai@4.55.5/resources/chat/completions";
 import { initPromptBuilder } from "./src/prompt.ts";
 import type { ChatRequest } from "./src/utils.ts";
-import { buildInferenceFunctionsForOpenAI } from "./openai.ts";
+import { buildInferenceFunctionsForTogether } from "./together.ts";
 
 const { test } = Deno;
 
-const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
+const together = new Together({ apiKey: Deno.env.get("TOGETHER_API_KEY") });
 
 const { respondWithImage, respondWithText, respondWithJson } =
-  buildInferenceFunctionsForOpenAI(openai);
+  buildInferenceFunctionsForTogether(together);
 
 const buildPrompt = initPromptBuilder<
-  ChatRequest<ChatCompletionCreateParamsNonStreaming>
+  ChatRequest<Together.CompletionCreateParamsNonStreaming>
 >({
+  prompt: "",
   messages: [],
-  model: "gpt-4o",
+  model: "Qwen/Qwen2.5-7B-Instruct-Turbo",
+  // model: "Qwen/Qwen2.5-72B-Instruct-Turbo",
 });
 
-test("OpenAI: build prompt and respond with text", async () => {
+test("TogetherAI: build prompt and respond with text", async () => {
   const requestContent = buildPrompt(
     `
       You are a professional AI assistant for teachers. Respond in the language {{language}}.
@@ -40,7 +40,7 @@ test("OpenAI: build prompt and respond with text", async () => {
   assertEquals(capital, "Paris");
 });
 
-test("OpenAI: build prompt and respond with typed JSON", async () => {
+test("TogetherAI: build prompt and respond with typed JSON", async () => {
   const requestJson = buildPrompt(
     `
       You are an educational consultant. Extract the course or lesson name, subject, duration,
@@ -95,14 +95,18 @@ test("OpenAI: build prompt and respond with typed JSON", async () => {
   assert(details);
 });
 
-const buildImagePrompt = initPromptBuilder<ImageGenerateParams>({
-  prompt: "",
-  model: "dall-e-2",
-  size: "256x256",
-  response_format: "url",
+type ImageRequest = Together.Images.ImageCreateParams;
+
+export const buildImagePrompt = initPromptBuilder<ImageRequest>({
+  prompt: "", // Initially blank to satisfy type
+  model: "black-forest-labs/FLUX.1-schnell",
+  width: 512,
+  height: 512,
+  n: 1,
+  steps: 4,
 });
 
-test("OpenAI: build image prompt and create an image", async () => {
+test("TogetherAI: build image prompt and create an image", async () => {
   const imagePrompt = buildImagePrompt(
     `
     {{request}}.
@@ -119,3 +123,28 @@ test("OpenAI: build image prompt and create an image", async () => {
 
   assertEquals(images.length, 1);
 });
+
+// export const respondWithImage = () =>
+// async (
+//   { renderedTemplate, request: _request, config }: {
+//     renderedTemplate: string;
+//     request: string;
+//     config: ImageRequest;
+//   },
+// ) =>
+//   await $getImageInference(together, renderedTemplate, {
+//     ...config,
+//   });
+
+// export const $getImageInference = async (
+//   together: Together,
+//   renderedTemplate: string,
+//   config: ImageRequest,
+// ): Promise<(string | undefined)> => {
+//   const response = await together.images.create({
+//     ...config,
+//     prompt: renderedTemplate,
+//   });
+
+//   return response.data.map((d) => d.url)[0];
+// };

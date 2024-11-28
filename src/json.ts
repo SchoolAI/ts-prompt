@@ -1,5 +1,5 @@
 import { z, type ZodType } from "zod";
-import { zodResponseFormat } from "openai/helpers/zod";
+import { zodToJsonSchema } from "zod-to-json-schema";
 import { unindent } from "./unindent.ts";
 
 const literalSchema: z.ZodUnion<
@@ -50,12 +50,6 @@ export const JSON_PROMPT = "You must return the result as a JSON object.";
 
 export const SCHEMA_PROMPT =
   "The result must strictly adhere to the following JSON schema:";
-
-export const zodToJsonSchema = (
-  schema: ZodType,
-): Record<string, unknown> | undefined =>
-  zodResponseFormat(schema, "result").json_schema
-    .schema;
 
 export const makeJsonTemplateString = (
   schema: ZodType,

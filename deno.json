@@ -4,17 +4,22 @@
   "license": "MIT",
   "exports": {
     ".": "./mod.ts",
-    "./openai.ts": "./openai.ts"
+    "./openai.ts": "./openai.ts",
+    "./together.ts": "./together.ts"
   },
   "tasks": {
     "dev": "deno run -A mod.ts",
-    "test:all": "deno test -A --env-file=.env src/*.test.ts *.integration.ts",
-    "test": "deno test -A --env-file=.env src/*.test.ts",
+    "test": {
+      "command": "echo 'Done'",
+      "dependencies": ["test:unit", "test:integration"]
+    },
+    "test:integration": "deno test -A --env-file=.env *.integration.ts",
+    "test:unit": "deno test -A src/*.test.ts",
     "build": "deno run -A build_npm.ts"
   },
   "imports": {
-    "zod": "npm:zod@3.23.8",
-    "openai": "npm:openai@4.55.5"
+    "zod": "npm:zod@^3.23.0",
+    "zod-to-json-schema": "npm:zod-to-json-schema@^3.23.0"
   },
   "compilerOptions": {
     "lib": ["esnext", "dom", "deno.ns"]

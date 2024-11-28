@@ -142,8 +142,8 @@ easy to change out with your own app-specific types or logging requirements. See
 ## Tests
 
 `ts-prompt` comes with a test suite of unit tests and a handful of integrtion tests. The
-integration tests call out to an OpenAI API endpoint and require a valid `OPENAI_API_KEY` to be set
-in the environment. To run the tests, use the following command:
+integration tests call out to an OpenAI API endpoint and require a valid `OPENAI_API_KEY` and
+`TOGETHER_API_KEY` to be set in the environment. To run the tests, use the following command:
 
 ```bash
 $ deno test
