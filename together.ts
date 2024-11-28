@@ -9,9 +9,9 @@ import {
 } from "./src/utils.ts";
 import { makeJsonTemplateString } from "./src/json.ts";
 
-export type ImageRequest<P> = P;
+type ImageRequest<P> = P;
 
-export type TogetherInterface = {
+type TogetherInterface = {
   images: {
     create(
       body: any,
@@ -28,13 +28,19 @@ export type TogetherInterface = {
   };
 };
 
-export const jsonModeSupportedModels = [
+const jsonModeSupportedModels = [
   "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
   "meta-llama/Meta-Llama-3.1-70B-Instruct-Turbo",
   "mistralai/Mixtral-8x7B-Instruct-v0.1",
   "mistralai/Mistral-7B-Instruct-v0.1 ",
 ];
 
+/**
+ * Builds inference functions for a Together client.
+ *
+ * @param together The Together client. You can import and pass any version that conforms to the
+ *        type expectations.
+ */
 export const buildInferenceFunctionsForTogether:
   BuildInferenceFunctionsForTogether = <
     Together extends TogetherInterface,

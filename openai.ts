@@ -9,7 +9,7 @@ import {
   type Message,
 } from "./src/utils.ts";
 
-export type OpenAIInterface = {
+type OpenAIInterface = {
   images: {
     generate(
       body: any,
@@ -32,6 +32,12 @@ const zodToJsonSchema = (
 ): Record<string, unknown> | undefined =>
   zodResponseFormat(schema, "result").json_schema.schema;
 
+/**
+ * Builds inference functions for an OpenAI client.
+ *
+ * @param openai The OpenAI client. You can import and pass any version that conforms to the
+ *        type expectations.
+ */
 export const buildInferenceFunctionsForOpenAI:
   BuildInferenceFunctionsForOpenAI = <
     OpenAI extends OpenAIInterface,

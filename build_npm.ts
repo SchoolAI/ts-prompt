@@ -1,4 +1,4 @@
-import { build, BuildOptions } from "jsr:@deno/dnt@0.41.3";
+import { build, type BuildOptions } from "jsr:@deno/dnt@0.41.3";
 
 const packageOptions: BuildOptions["package"] = {
   name: "ts-prompt",
