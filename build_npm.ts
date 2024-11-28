@@ -19,7 +19,7 @@ const packageOptions: BuildOptions["package"] = {
 const options: BuildOptions = {
   entryPoints: ["mod.ts", {
     name: "./openai",
-    path: "./src/openai/index.ts",
+    path: "./openai.ts",
   }],
   outDir: "./npm",
   shims: { deno: true },
