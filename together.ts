@@ -9,24 +9,25 @@ import {
 } from "./src/utils.ts";
 import { makeJsonTemplateString } from "./src/json.ts";
 
-type ImageRequest<P> = P;
-
-type TogetherInterface = {
-  images: {
-    create(
-      body: any,
-      options?: any,
-    ): Promise<ImageFile>;
-  };
-  chat: {
-    completions: {
-      create(
-        body: any,
-        options?: any,
-      ): Promise<Completion>;
-    };
-  };
+export type ImageInferenceParams<Together extends TogetherInterface> = {
+  renderedTemplate: string;
+  request: Parameters<Together["images"]["create"]>[0];
 };
+
+export type ChatInferenceParams<
+  Together extends TogetherInterface,
+  M extends Message,
+> = {
+  renderedTemplate: string;
+  request: ChatRequest<
+    Parameters<Together["chat"]["completions"]["create"]>[0],
+    M
+  >;
+};
+
+export type ChatInferenceResult<Together extends TogetherInterface> = Awaited<
+  ReturnType<Together["chat"]["completions"]["create"]>
+>["choices"][number];
 
 const jsonModeSupportedModels = [
   "meta-llama/Meta-Llama-3.1-8B-Instruct-Turbo",
@@ -194,25 +195,24 @@ type Completion = {
   }[];
 };
 
-export type ImageInferenceParams<Together extends TogetherInterface> = {
-  renderedTemplate: string;
-  request: Parameters<Together["images"]["create"]>[0];
-};
+type ImageRequest<P> = P;
 
-export type ChatInferenceParams<
-  Together extends TogetherInterface,
-  M extends Message,
-> = {
-  renderedTemplate: string;
-  request: ChatRequest<
-    Parameters<Together["chat"]["completions"]["create"]>[0],
-    M
-  >;
+type TogetherInterface = {
+  images: {
+    create(
+      body: any,
+      options?: any,
+    ): Promise<ImageFile>;
+  };
+  chat: {
+    completions: {
+      create(
+        body: any,
+        options?: any,
+      ): Promise<Completion>;
+    };
+  };
 };
-
-export type ChatInferenceResult<Together extends TogetherInterface> = Awaited<
-  ReturnType<Together["chat"]["completions"]["create"]>
->["choices"][number];
 
 type BuildInferenceFunctionsForTogether = <
   Together extends TogetherInterface,

@@ -9,22 +9,25 @@ import {
   type Message,
 } from "./src/utils.ts";
 
-type OpenAIInterface = {
-  images: {
-    generate(
-      body: any,
-      options?: any,
-    ): Promise<ImagesResponse>;
-  };
-  chat: {
-    completions: {
-      create(
-        body: any,
-        options?: any,
-      ): Promise<Completion>;
-    };
-  };
+export type ImageInferenceParams<OpenAI extends OpenAIInterface> = {
+  renderedTemplate: string;
+  request: Parameters<OpenAI["images"]["generate"]>[0];
 };
+
+export type ChatInferenceParams<
+  OpenAI extends OpenAIInterface,
+  M extends Message,
+> = {
+  renderedTemplate: string;
+  request: ChatRequest<
+    Parameters<OpenAI["chat"]["completions"]["create"]>[0],
+    M
+  >;
+};
+
+export type ChatInferenceResult<OpenAI extends OpenAIInterface> = Awaited<
+  ReturnType<OpenAI["chat"]["completions"]["create"]>
+>["choices"][number];
 
 // Use openai's vendored zodToJsonSchema
 const zodToJsonSchema = (
@@ -182,25 +185,22 @@ type Completion = {
   }[];
 };
 
-export type ImageInferenceParams<OpenAI extends OpenAIInterface> = {
-  renderedTemplate: string;
-  request: Parameters<OpenAI["images"]["generate"]>[0];
+type OpenAIInterface = {
+  images: {
+    generate(
+      body: any,
+      options?: any,
+    ): Promise<ImagesResponse>;
+  };
+  chat: {
+    completions: {
+      create(
+        body: any,
+        options?: any,
+      ): Promise<Completion>;
+    };
+  };
 };
-
-export type ChatInferenceParams<
-  OpenAI extends OpenAIInterface,
-  M extends Message,
-> = {
-  renderedTemplate: string;
-  request: ChatRequest<
-    Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-    M
-  >;
-};
-
-export type ChatInferenceResult<OpenAI extends OpenAIInterface> = Awaited<
-  ReturnType<OpenAI["chat"]["completions"]["create"]>
->["choices"][number];
 
 type BuildInferenceFunctionsForOpenAI = <
   OpenAI extends OpenAIInterface,
