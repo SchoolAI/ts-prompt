@@ -15,7 +15,8 @@ extract placeholders in the prompt template and create type consistency across t
 ```typescript
 import { OpenAI } from "openai";
 import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
-import { buildInferenceFunctionsForOpenAI, initPromptBuilder } from "ts-prompt/openai.ts";
+import { initPromptbuilder, ChatRequest } from "ts-prompt";
+import { buildInferenceFunctionsForOpenAI } from "ts-prompt/openai.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! })
 
