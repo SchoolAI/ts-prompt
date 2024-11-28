@@ -4,7 +4,7 @@ import { JSON_PROMPT, stringToJsonSchema } from "./src/json.ts";
 import {
   type ChatRequest,
   type ImageRequest,
-  JoinMessagesFn,
+  type JoinMessagesFn,
   joinMessagesTop,
   type Message,
 } from "./src/utils.ts";
