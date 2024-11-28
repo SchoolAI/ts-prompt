@@ -11,8 +11,8 @@ const packageOptions: BuildOptions["package"] = {
     url: "git+https://github.com/SchoolAI/ts-prompt.git",
   },
   peerDependencies: {
-    "openai": "^4.55.5",
     "zod": "^3.0.0",
+    "zod-to-json-schema": "^3.23.0",
   },
 };
 

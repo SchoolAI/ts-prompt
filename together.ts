@@ -188,64 +188,59 @@ type Completion = {
   }[];
 };
 
-// This remarkable type signature was generated via "deno task build" and then by copying
-// the type from npm/esm/together.d.ts
+export type ImageInferenceParams<Together extends TogetherInterface> = {
+  renderedTemplate: string;
+  request: Parameters<Together["images"]["create"]>[0];
+};
+
+export type ChatInferenceParams<
+  Together extends TogetherInterface,
+  M extends Message,
+> = {
+  renderedTemplate: string;
+  request: ChatRequest<
+    Parameters<Together["chat"]["completions"]["create"]>[0],
+    M
+  >;
+};
+
+export type ChatInferenceResult<Together extends TogetherInterface> = Awaited<
+  ReturnType<Together["chat"]["completions"]["create"]>
+>["choices"][number];
+
 type BuildInferenceFunctionsForTogether = <
   Together extends TogetherInterface,
   M extends Message,
 >(
-  together: Together,
+  openai: Together,
 ) => {
   $inferImage: (
     renderedTemplate: string,
-    request: Parameters<Together["images"]["create"]>[0],
+    request: ImageInferenceParams<Together>["request"],
   ) => Promise<(string | undefined)[]>;
   $inferChoice: (
     renderedTemplate: string,
-    request: ChatRequest<
-      Parameters<Together["chat"]["completions"]["create"]>[0],
-      M
-    >,
-  ) => Promise<
-    Awaited<
-      ReturnType<Together["chat"]["completions"]["create"]>
-    >["choices"][number]
-  >;
+    request: ChatInferenceParams<Together, M>["request"],
+  ) => Promise<ChatInferenceResult<Together>>;
   $inferJson: <T extends ZodType>(
     schema: T,
     renderedTemplate: string,
-    request: ChatRequest<
-      Parameters<Together["chat"]["completions"]["create"]>[0],
-      M
-    >,
+    request: ChatInferenceParams<Together, M>["request"],
   ) => Promise<z.infer<T>>;
-  respondWithImage: (format?: "url" | "b64_json") => (params: {
-    renderedTemplate: string;
-    request: Parameters<Together["images"]["create"]>[0];
-  }) => Promise<(string | undefined)[]>;
-  respondWithChoice: () => (params: {
-    renderedTemplate: string;
-    request: ChatRequest<
-      Parameters<Together["chat"]["completions"]["create"]>[0],
-      M
-    >;
-  }) => Promise<
-    Awaited<
-      ReturnType<Together["chat"]["completions"]["create"]>
-    >["choices"][number]
+  respondWithImage: (
+    format?: "url" | "b64_json",
+  ) => (
+    params: ImageInferenceParams<Together>,
+  ) => Promise<(string | undefined)[]>;
+  respondWithChoice: () => (
+    params: ChatInferenceParams<Together, M>,
+  ) => Promise<
+    ChatInferenceResult<Together>
   >;
-  respondWithText: () => (params: {
-    renderedTemplate: string;
-    request: ChatRequest<
-      Parameters<Together["chat"]["completions"]["create"]>[0],
-      M
-    >;
-  }) => Promise<string | null>;
-  respondWithJson: <T extends ZodType>(schema: T) => (params: {
-    renderedTemplate: string;
-    request: ChatRequest<
-      Parameters<Together["chat"]["completions"]["create"]>[0],
-      M
-    >;
-  }) => Promise<z.TypeOf<T>>;
+  respondWithText: () => (
+    params: ChatInferenceParams<Together, M>,
+  ) => Promise<string | null>;
+  respondWithJson: <T extends ZodType>(
+    schema: T,
+  ) => (params: ChatInferenceParams<Together, M>) => Promise<z.TypeOf<T>>;
 };

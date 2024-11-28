@@ -176,8 +176,26 @@ type Completion = {
   }[];
 };
 
-// This remarkable type signature was generated via "deno task build" and then by copying
-// the type from npm/esm/openai.d.ts
+export type ImageInferenceParams<OpenAI extends OpenAIInterface> = {
+  renderedTemplate: string;
+  request: Parameters<OpenAI["images"]["generate"]>[0];
+};
+
+export type ChatInferenceParams<
+  OpenAI extends OpenAIInterface,
+  M extends Message,
+> = {
+  renderedTemplate: string;
+  request: ChatRequest<
+    Parameters<OpenAI["chat"]["completions"]["create"]>[0],
+    M
+  >;
+};
+
+export type ChatInferenceResult<OpenAI extends OpenAIInterface> = Awaited<
+  ReturnType<OpenAI["chat"]["completions"]["create"]>
+>["choices"][number];
+
 type BuildInferenceFunctionsForOpenAI = <
   OpenAI extends OpenAIInterface,
   M extends Message,
@@ -186,54 +204,29 @@ type BuildInferenceFunctionsForOpenAI = <
 ) => {
   $inferImage: (
     renderedTemplate: string,
-    request: Parameters<OpenAI["images"]["generate"]>[0],
+    request: ImageInferenceParams<OpenAI>["request"],
   ) => Promise<(string | undefined)[]>;
   $inferChoice: (
     renderedTemplate: string,
-    request: ChatRequest<
-      Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      M
-    >,
-  ) => Promise<
-    Awaited<
-      ReturnType<OpenAI["chat"]["completions"]["create"]>
-    >["choices"][number]
-  >;
+    request: ChatInferenceParams<OpenAI, M>["request"],
+  ) => Promise<ChatInferenceResult<OpenAI>>;
   $inferJson: <T extends ZodType>(
     schema: T,
     renderedTemplate: string,
-    request: ChatRequest<
-      Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      M
-    >,
+    request: ChatInferenceParams<OpenAI, M>["request"],
   ) => Promise<z.infer<T>>;
-  respondWithImage: (format?: "url" | "b64_json") => (params: {
-    renderedTemplate: string;
-    request: Parameters<OpenAI["images"]["generate"]>[0];
-  }) => Promise<(string | undefined)[]>;
-  respondWithChoice: () => (params: {
-    renderedTemplate: string;
-    request: ChatRequest<
-      Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      M
-    >;
-  }) => Promise<
-    Awaited<
-      ReturnType<OpenAI["chat"]["completions"]["create"]>
-    >["choices"][number]
+  respondWithImage: (
+    format?: "url" | "b64_json",
+  ) => (
+    params: ImageInferenceParams<OpenAI>,
+  ) => Promise<(string | undefined)[]>;
+  respondWithChoice: () => (params: ChatInferenceParams<OpenAI, M>) => Promise<
+    ChatInferenceResult<OpenAI>
   >;
-  respondWithText: () => (params: {
-    renderedTemplate: string;
-    request: ChatRequest<
-      Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      M
-    >;
-  }) => Promise<string | null>;
-  respondWithJson: <T extends ZodType>(schema: T) => (params: {
-    renderedTemplate: string;
-    request: ChatRequest<
-      Parameters<OpenAI["chat"]["completions"]["create"]>[0],
-      M
-    >;
-  }) => Promise<z.TypeOf<T>>;
+  respondWithText: () => (
+    params: ChatInferenceParams<OpenAI, M>,
+  ) => Promise<string | null>;
+  respondWithJson: <T extends ZodType>(
+    schema: T,
+  ) => (params: ChatInferenceParams<OpenAI, M>) => Promise<z.TypeOf<T>>;
 };
