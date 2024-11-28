@@ -25,6 +25,7 @@
     "jsr:@ts-morph/bootstrap@0.24": "0.24.0",
     "jsr:@ts-morph/common@0.24": "0.24.0",
     "npm:openai@4.55.5": "4.55.5_zod@3.23.8",
+    "npm:openai@4.73.1": "4.73.1_zod@3.23.8",
     "npm:together-ai@0.10.0": "0.10.0",
     "npm:zod-to-json-schema@^3.23.0": "3.23.5_zod@3.23.8",
     "npm:zod@^3.23.0": "3.23.8"
@@ -299,6 +300,19 @@
     },
     "openai@4.55.5_zod@3.23.8": {
       "integrity": "sha512-9OkMAMljFv1LxUFf5HLm/pw7zFd4yMgW+lKOYF80RBwuGWU+ZKF5BQGll+TEGAHu23YMeT8t6VSxI27c/DRAOA==",
+      "dependencies": [
+        "@types/node@18.19.66",
+        "@types/node-fetch",
+        "abort-controller",
+        "agentkeepalive",
+        "form-data-encoder",
+        "formdata-node",
+        "node-fetch",
+        "zod"
+      ]
+    },
+    "openai@4.73.1_zod@3.23.8": {
+      "integrity": "sha512-nWImDJBcUsqrhy7yJScXB4+iqjzbUEgzfA3un/6UnHFdwWhjX24oztj69Ped/njABfOdLcO/F7CeWTI5dt8Xmg==",
       "dependencies": [
         "@types/node@18.19.66",
         "@types/node-fetch",

@@ -1,5 +1,5 @@
 import type { z, ZodType } from "zod";
-import { zodToJsonSchema } from "zod-to-json-schema";
+import { zodResponseFormat } from "npm:openai@4.73.1/helpers/zod";
 import { JSON_PROMPT, stringToJsonSchema } from "./src/json.ts";
 import {
   type ChatRequest,
@@ -25,6 +25,12 @@ export type OpenAIInterface = {
     };
   };
 };
+
+// Use openai's vendored zodToJsonSchema
+const zodToJsonSchema = (
+  schema: ZodType,
+): Record<string, unknown> | undefined =>
+  zodResponseFormat(schema, "result").json_schema.schema;
 
 export const buildInferenceFunctionsForOpenAI:
   BuildInferenceFunctionsForOpenAI = <
