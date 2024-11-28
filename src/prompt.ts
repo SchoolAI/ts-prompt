@@ -6,6 +6,16 @@ import {
 
 export type TemplateArgs<P extends string> = { [key in P]: string };
 
+/**
+ * The type signature of an "inference" function. An inference function is an adapter that takes
+ * a rendered template string and a request object, and returns a promise of the inferred output.
+ *
+ * Normally, you don't need to use this type directly. Instead, use the `initPromptBuilder`, and
+ * one of the `respondeWith*` (`respondWithText`, `respondWithJson`, etc.) functions to create a
+ * prompt.
+ *
+ * See the `openai.ts` and `together.ts` examples for more information.
+ */
 export type InferenceFn<X, P extends string, O> = ({
   templateArgs,
   renderedTemplate,
@@ -20,6 +30,31 @@ export type InferenceFn<X, P extends string, O> = ({
   request: X;
 }) => Promise<O>;
 
+/**
+ * The main function to create a prompt. This function is curried, and the first call creates a
+ * prompt builder, which is then used to create individual prompts.
+ *
+ * ```ts
+ * const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
+ *
+ * const { respondWithImage, respondWithText, respondWithJson } =
+ *   buildInferenceFunctionsForOpenAI(openai);
+ *
+ * const buildPrompt = initPromptBuilder<
+ *   ChatRequest<ChatCompletionCreateParamsNonStreaming>
+ * >({
+ *   messages: [],
+ *   model: "gpt-4o",
+ * });
+ *
+ * // Finally, create an actual prompt with a template string and an inference function
+ * const requestContent = buildPrompt(`
+ *     You are an AI Assistant for teachers. Respond in the language {{language}}.
+ *   `,
+ *   respondWithText()
+ * )
+ * ```
+ */
 export const initPromptBuilder = <X>(
   defaultBuilderRequest: X,
 ): PromptBuilder<X> => {

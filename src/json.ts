@@ -11,15 +11,37 @@ const literalSchema: z.ZodUnion<
   z.null(),
 ]);
 
-export type Literal = z.infer<typeof literalSchema>;
+type Literal = z.infer<typeof literalSchema>;
 
+/**
+ * A JSON type that can contain strings, numbers, booleans, nulls, other JSON objects, or arrays.
+ */
 export type Json = Literal | { [key: string]: Json } | Json[];
 
+/**
+ * A Zod schema for the `Json` type.
+ */
 export const jsonSchema: z.ZodType<Json> = z.lazy(() =>
   z.union([literalSchema, z.array(jsonSchema), z.record(jsonSchema)])
 );
 
-// From https://github.com/JacobWeisenburger/zod_utilz (MIT License)
+/**
+ * A utility Zod schema type that converts a string to a JSON object.
+ *
+ * Example usage:
+ * ```ts
+ * const input = `{"name": "Alice", "age": 30}`;
+ * const personSchema = z.object({
+ *   name: z.string(),
+ *   age: z.number(),
+ * });
+ * const result = stringToJsonSchema.pipe(personSchema).parse(input);
+ * ```
+ *
+ * You can also use Zod's `.catch` to handle JSON parse errors.
+ *
+ * From https://github.com/JacobWeisenburger/zod_utilz (MIT License)
+ */
 export const stringToJsonSchema: z.ZodEffects<
   z.ZodString,
   | string
@@ -46,11 +68,20 @@ export const stringToJsonSchema: z.ZodEffects<
     }
   });
 
+/**
+ * The string included in the prompt to indicate JSON should be generated in the result.
+ */
 export const JSON_PROMPT = "You must return the result as a JSON object.";
 
+/**
+ * The string included in the prompt to indicate a JSON schema must be adhered to.
+ */
 export const SCHEMA_PROMPT =
   "The result must strictly adhere to the following JSON schema:";
 
+/**
+ * Generate a JSON template string, including JSON Schema, from a Zod schema.
+ */
 export const makeJsonTemplateString = (
   schema: ZodType,
 ): string =>
