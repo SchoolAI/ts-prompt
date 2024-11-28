@@ -5,8 +5,6 @@ import {
   zodToJsonSchema,
 } from "./src/json.ts";
 
-// import { OpenAI } from "openai";
-
 export type ChatRequest<P, M = unknown> = P & {
   messages: M[];
   joinMessages?: JoinMessagesFn<M>;

@@ -13,14 +13,19 @@ extract placeholders in the prompt template and create type consistency across t
 ## Example
 
 ```typescript
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! })
+import { OpenAI } from "openai";
+import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
+import { buildInferenceFunctionsForOpenAI, initPromptBuilder } from "ts-prompt/openai.ts";
+
+const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! })
 
 const buildPrompt = initPromptBuilder<
-  ChatCompletionCreateParamsNonStreaming,
-  ChatRequest
->({ messages: [], model: 'gpt-3.5-turbo', stream: false, })
+  ChatRequest<ChatCompletionCreateParamsNonStreaming>
+>({ messages: [], model: 'gpt-3.5-turbo' })
 
-const requestCourseMetadata = buildPrompt({
+const { respondWithJson } = buildInferenceFunctionsForOpenAI(openai)
+
+const courseMetadataPrompt = buildPrompt({
   template: `
     You are an educational consultant. Extract the course or lesson name,
     subject, duration, key topics, and target audience. If information is
@@ -29,7 +34,7 @@ const requestCourseMetadata = buildPrompt({
 
     Record your findings in the natural language {{language}}.
   `,
-  respondWithJson(openai,
+  respondWithJson(
     z.object({
       name: z.string().nullable()
         .describe('The name of the course or lesson.'),
@@ -45,16 +50,16 @@ const requestCourseMetadata = buildPrompt({
   )
 })
 
-// Note: the async `requestCourseMetadata` function above will require a
+// Note: the async `courseMetadataPrompt` function above will require a
 // `language` template arg to be passed in, enforced by typescript. It
 // also enforces that the response from the LLM is a JSON object with the
 // correct shape and types, parsed by the zod schema provided. The result
 // is guaranteed to be typed correctly (or an error will be thrown).
 
 // Request the AI to provide a response
-const details = await requestCourseMetadata({
-  request: {
-    messages: [
+const details = await courseMetadataPrompt(
+  { language: 'English' },
+  { messages: [
       {
         role: 'user',
         content: `
@@ -68,10 +73,7 @@ const details = await requestCourseMetadata({
       }
     ],
   },
-  templateArgs: { language: 'English' },
-  // optional:
-  // config: { temperature: 0.8 },
-})
+)
 
 // Note: in this example, the user message will be appended by default to
 // the system message, before it is sent to the LLM for inference. But
@@ -97,32 +99,36 @@ you need to create is a function that builds prompts, e.g. `buildPrompt` or `bui
 
 ```typescript
 import { OpenAI } from "openai";
+import type { ImageGenerateParams } from "openai/resources/images.mjs";
 import { initPromptBuilder } from "ts-prompt";
 
 // Initialize OpenAI client with API key
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
 
 // Initialize the `buildImagePrompt` function with default configuration
-const buildImagePrompt = initPromptBuilder<ImageGenerateParams, string>({
+const buildImagePrompt = initPromptBuilder<ImageGenerateParams>({
   prompt: "",
-  model: "dall-e-2",
-  size: "256x256",
+  model: "dall-e-3",
+  size: "1024x1024",
   response_format: "url",
 });
 
+const { respondWithImage } = buildInferenceFunctionsForOpenAI(openai);
+
 // now use `buildImagePrompt` to define a typesafe, specific image prompt:
-const requestGenerateIcon = buildImagePrompt(
+const generateIconPrompt = buildImagePrompt(
   `
-  Create a beautiful, flat color image suitable for iconography.
-  Make it in the style of '{{style}}'.
-`,
-  respondWithImage(openai, "url"),
+    {{request}}.
+    Create a beautiful, flat color image suitable for iconography.
+    Make it in the style of '{{style}}'.
+  `,
+  respondWithImage("url"),
 );
 
 // finally, use the `requestGenerateIcon` function to request an image:
-const images = await requestGenerateIcon({
-  templateArgs: { style: "absurdism" },
+const images = await generateIconPrompt({
   request: "a red apple",
+  style: "absurdism",
 });
 ```
 
@@ -131,7 +137,7 @@ engine, or if you need special logging, tracking, retry logic, etc.
 
 Other functions specific to OpenAI, such as `respondWithJson`, `respondWithText`, etc., are
 easy to change out with your own app-specific types or logging requirements. See
-[src/openai/index.ts](src/openai/index.ts).
+[openai.ts](openai.ts) and accompanying integration test.
 
 ## Tests
 
@@ -140,5 +146,7 @@ integration tests call out to an OpenAI API endpoint and require a valid `OPENAI
 in the environment. To run the tests, use the following command:
 
 ```bash
-$ pnpm test
+$ deno test
+# or to run all tests, including integration tests:
+$ deno task test:all
 ```
