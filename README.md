@@ -4,7 +4,7 @@
 (template arguments), and outputs (zod-parsed results) are guaranteed to be correctly typed so that
 code changes and prompt changes cannot get out of sync. The patterns in this library were extracted
 from SchoolAI's large, working codebase and agentic system. It is provider-agnostic, but works well
-with OpenAI.
+with OpenAI and TogetherAI.
 
 Note that it is not possible to take advantage of template placeholders if prompts are stored in a
 database--the prompts must be stored in the code itself so that typescript's powerful engine can
@@ -125,7 +125,7 @@ const generateIconPrompt = buildImagePrompt(
   respondWithImage("url"),
 );
 
-// finally, use the `requestGenerateIcon` function to request an image:
+// finally, use the `generateIconPrompt` function to request an image:
 const images = await generateIconPrompt({
   request: "a red apple",
   style: "absurdism",
@@ -141,12 +141,18 @@ easy to change out with your own app-specific types or logging requirements. See
 
 ## Tests
 
-`ts-prompt` comes with a test suite of unit tests and a handful of integrtion tests. The
-integration tests call out to an OpenAI API endpoint and require a valid `OPENAI_API_KEY` and
-`TOGETHER_API_KEY` to be set in the environment. To run the tests, use the following command:
+`ts-prompt` comes with a test suite of unit tests and a handful of integration tests. The
+integration tests need valid keys set as environment variables, to call out to an OpenAI API
+endpoint (`OPENAI_API_KEY`), and the together.ai endpoint (`TOGETHER_API_KEY`). To run the tests,
+use the following command:
 
 ```bash
-$ deno test
-# or to run all tests, including integration tests:
-$ deno task test:all
+# to run all tests:
+$ deno task test
+
+# or just unit tests:
+$ deno task test:unit
+
+# or just integration tests:
+$ deno task test:integration
 ```
