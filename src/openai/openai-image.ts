@@ -1,4 +1,4 @@
-import type { InferenceParams } from "^/prompt.ts";
+import { type InferenceParams, initPromptBuilder } from "^/prompt.ts";
 
 type ImageGenerateParamBody = {
   response_format: "url" | "b64_json";
@@ -19,15 +19,15 @@ type ImagesResponse = {
   data: { b64_json?: string; url?: string }[];
 };
 
-export type ImagePromptContext<OpenAI extends OpenAIInterface> = {
+export type ImagePromptContext<OpenAI extends OpenAIInterface, AddCtx> = {
   body: Omit<Parameters<OpenAI["images"]["generate"]>[0], "prompt">;
   options: Parameters<OpenAI["images"]["generate"]>[1];
-};
+} & AddCtx;
 
-export type Types<OpenAI extends OpenAIInterface> = {
-  context: ImagePromptContext<OpenAI>;
+export type Types<OpenAI extends OpenAIInterface, AddCtx> = {
+  context: ImagePromptContext<OpenAI, Partial<AddCtx>>;
   result: (string | undefined)[];
-  inferenceParams: InferenceParams<ImagePromptContext<OpenAI>>;
+  inferenceParams: InferenceParams<ImagePromptContext<OpenAI, Partial<AddCtx>>>;
 };
 
 /**
@@ -36,68 +36,73 @@ export type Types<OpenAI extends OpenAIInterface> = {
  * @param openai The OpenAI client. You can import and pass any version that conforms to the
  *        type expectations.
  */
-export const buildImageInferenceFunctionsForOpenAI = <
-  OpenAI extends OpenAIInterface,
-  T extends Types<OpenAI>,
->(
-  openai: OpenAI,
-) => {
-  const mergeContext = (params: T["inferenceParams"]): T["context"] => {
-    return {
-      body: {
-        ...params.contextFromBuilder.body,
-        ...params.contextFromPrompt?.body,
-        ...params.contextFromRequest?.body,
-      },
-      options: {
-        ...params.contextFromBuilder.options,
-        ...params.contextFromPrompt?.options,
-        ...params.contextFromRequest?.options,
-      },
-    };
-  };
+export function buildImageFunctions<AddCtx>() {
+  return <OpenAI extends OpenAIInterface, T extends Types<OpenAI, AddCtx>>(
+    openai: OpenAI,
+  ) => {
+    const initImagePromptBuilder = initPromptBuilder<T["context"]>;
 
-  const inferImageRaw = async (
-    renderedTemplate: T["inferenceParams"]["renderedTemplate"],
-    { body, options }: T["context"],
-  ): Promise<T["result"]> => {
-    const response = await openai.images.generate({
-      ...body,
-      prompt: renderedTemplate,
-    }, options);
-
-    switch (body.response_format) {
-      case "url":
-        return response.data.map((d) => d.url);
-      case "b64_json":
-        return response.data.map((d) => d.b64_json);
-      default:
-        return [];
-    }
-  };
-
-  const inferImage = async (params: T["inferenceParams"]) => {
-    const context = mergeContext(params);
-    return await inferImageRaw(params.renderedTemplate, context);
-  };
-
-  const respondWithImage =
-    (format: "url" | "b64_json" = "url") =>
-    async (params: T["inferenceParams"]) => {
-      const context = mergeContext(params);
-      return await inferImageRaw(params.renderedTemplate, {
-        ...context,
+    const mergeContext = (params: T["inferenceParams"]): T["context"] => {
+      return {
+        ...params.contextFromBuilder,
+        ...params.contextFromPrompt,
+        ...params.contextFromRequest,
         body: {
-          ...context.body,
-          response_format: format,
+          ...params.contextFromBuilder.body,
+          ...params.contextFromPrompt?.body,
+          ...params.contextFromRequest?.body,
         },
-      });
+        options: {
+          ...params.contextFromBuilder.options,
+          ...params.contextFromPrompt?.options,
+          ...params.contextFromRequest?.options,
+        },
+      };
     };
 
-  return {
-    mergeContext,
-    inferImageRaw,
-    inferImage,
-    respondWithImage,
+    const inferImageRaw = async (
+      renderedTemplate: T["inferenceParams"]["renderedTemplate"],
+      { body, options }: T["context"],
+    ): Promise<T["result"]> => {
+      const response = await openai.images.generate({
+        ...body,
+        prompt: renderedTemplate,
+      }, options);
+
+      switch (body.response_format) {
+        case "url":
+          return response.data.map((d) => d.url);
+        case "b64_json":
+          return response.data.map((d) => d.b64_json);
+        default:
+          return [];
+      }
+    };
+
+    const inferImage = async (params: T["inferenceParams"]) => {
+      const context = mergeContext(params);
+      return await inferImageRaw(params.renderedTemplate, context);
+    };
+
+    const respondWithImage =
+      (format: "url" | "b64_json" = "url") =>
+      async (params: T["inferenceParams"]) => {
+        const context = mergeContext(params);
+        return await inferImageRaw(params.renderedTemplate, {
+          ...context,
+          body: {
+            ...context.body,
+            response_format: format,
+          },
+        });
+      };
+
+    return {
+      initImagePromptBuilder,
+      mergeContext,
+      inferImageRaw,
+      inferImage,
+      respondWithImage,
+    };
   };
-};
+}

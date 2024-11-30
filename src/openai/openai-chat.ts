@@ -2,7 +2,7 @@ import type { z, ZodType } from "zod";
 import { zodResponseFormat } from "npm:openai@4.73.1/helpers/zod";
 import { JSON_PROMPT, stringToJsonSchema } from "^/json.ts";
 import { type MergeMessagesFn, mergeMessagesTop } from "^/merge.ts";
-import type { InferenceParams } from "^/prompt.ts";
+import { type InferenceParams, initPromptBuilder } from "^/prompt.ts";
 
 type ChatCompletionCreateParamBody<Message> = {
   messages: Message[];
@@ -40,6 +40,7 @@ type ChatCompletionCreateResult<
 export type ChatPromptContext<
   Message,
   OpenAI extends OpenAIInterface<Message>,
+  AddCtx,
 > = {
   body: Omit<
     Parameters<OpenAI["chat"]["completions"]["create"]>[0],
@@ -48,12 +49,14 @@ export type ChatPromptContext<
   options?: Parameters<OpenAI["chat"]["completions"]["create"]>[1];
   messages?: Message[];
   mergeMessages?: MergeMessagesFn<Message>;
-};
+} & AddCtx;
 
-export type Types<Message, OpenAI extends OpenAIInterface<Message>> = {
-  context: ChatPromptContext<Message, OpenAI>;
+export type Types<Message, OpenAI extends OpenAIInterface<Message>, AddCtx> = {
+  context: ChatPromptContext<Message, OpenAI, Partial<AddCtx>>;
   result: ChatCompletionCreateResult<Message, OpenAI>;
-  inferenceParams: InferenceParams<ChatPromptContext<Message, OpenAI>>;
+  inferenceParams: InferenceParams<
+    ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+  >;
 };
 
 /**
@@ -70,130 +73,134 @@ export const zodToJsonSchema = (
  * @param openai The OpenAI client. You can import and pass any version that conforms to the
  *        type expectations.
  */
-export const buildChatInferenceFunctionsForOpenAI = <
-  Message,
-  OpenAI extends OpenAIInterface<Message>,
-  T extends Types<Message, OpenAI>,
->(
-  openai: OpenAI,
-) => {
-  const mergeChatContext = (params: T["inferenceParams"]): T["context"] => {
-    return {
-      body: {
-        ...params.contextFromBuilder.body,
-        ...params.contextFromPrompt?.body,
-        ...params.contextFromRequest?.body,
-      },
-      options: {
-        ...params.contextFromBuilder.options,
-        ...params.contextFromPrompt?.options,
-        ...params.contextFromRequest?.options,
-      },
-      messages:
+export function buildChatFunctions<AddCtx>() {
+  return <Message, OpenAI extends OpenAIInterface<Message>>(openai: OpenAI) => {
+    type T = Types<Message, OpenAI, AddCtx>;
+
+    const initChatPromptBuilder = initPromptBuilder<T["context"]>;
+
+    const mergeChatContext = (params: T["inferenceParams"]): T["context"] => {
+      return {
+        ...params.contextFromBuilder,
+        ...params.contextFromPrompt,
+        ...params.contextFromRequest,
+        body: {
+          ...params.contextFromBuilder.body,
+          ...params.contextFromPrompt?.body,
+          ...params.contextFromRequest?.body,
+        },
+        options: {
+          ...params.contextFromBuilder.options,
+          ...params.contextFromPrompt?.options,
+          ...params.contextFromRequest?.options,
+        },
         // deno-fmt-ignore
-        params.contextFromRequest?.messages ??
-        params.contextFromPrompt?.messages ??
-        params.contextFromBuilder.messages,
-      mergeMessages:
+        messages:
+          params.contextFromRequest?.messages ??
+          params.contextFromPrompt?.messages ??
+          params.contextFromBuilder.messages,
         // deno-fmt-ignore
-        params.contextFromRequest?.mergeMessages ??
-        params.contextFromPrompt?.mergeMessages ??
-        params.contextFromBuilder.mergeMessages,
+        mergeMessages:
+          params.contextFromRequest?.mergeMessages ??
+          params.contextFromPrompt?.mergeMessages ??
+          params.contextFromBuilder.mergeMessages,
+      };
     };
-  };
 
-  const mergeChatContextAndMessages = (
-    params: T["inferenceParams"],
-  ): T["context"] => {
-    // First, merge the context from the builder, prompt, and request
-    const context = mergeChatContext(params);
+    const mergeChatContextAndMessages = (
+      params: T["inferenceParams"],
+    ): T["context"] => {
+      // First, merge the context from the builder, prompt, and request
+      const context = mergeChatContext(params);
 
-    // Determine how to merge the rendered template with messages
-    const mergeMessages = context.mergeMessages ?? mergeMessagesTop;
+      // Determine how to merge the rendered template with messages
+      const mergeMessages = context.mergeMessages ?? mergeMessagesTop;
 
-    // Convert the rendered template into a system message and merge it in
-    const messages = mergeMessages(
-      params.renderedTemplate,
-      context.messages ?? [],
-      (content) => ({ content, role: "system" } as Message),
-    );
+      // Convert the rendered template into a system message and merge it in
+      const messages = mergeMessages(
+        params.renderedTemplate,
+        context.messages ?? [],
+        (content) => ({ content, role: "system" } as Message),
+      );
 
-    // Return a new context that includes the merged messages
-    return {
-      ...context,
-      messages,
+      // Return a new context that includes the merged messages
+      return {
+        ...context,
+        messages,
+      };
     };
-  };
 
-  const inferChatRaw = async (
-    messages: Message[],
-    { body, options }: T["context"],
-  ): Promise<T["result"]> => {
-    const result = await openai.chat.completions.create(
-      { ...body, messages },
-      options,
-    );
+    const inferChatRaw = async (
+      messages: Message[],
+      { body, options }: T["context"],
+    ): Promise<T["result"]> => {
+      const result = await openai.chat.completions.create(
+        { ...body, messages },
+        options,
+      );
 
-    const firstChoice = result.choices[0];
-    if (!firstChoice) throw new Error("no completion results");
+      const firstChoice = result.choices[0];
+      if (!firstChoice) throw new Error("no completion results");
 
-    return firstChoice;
-  };
+      return firstChoice;
+    };
 
-  const inferChoice = async (
-    params: T["inferenceParams"],
-  ): Promise<T["result"]> => {
-    const context = mergeChatContextAndMessages(params);
-    return await inferChatRaw(context.messages ?? [], context);
-  };
+    const inferChoice = async (
+      params: T["inferenceParams"],
+    ): Promise<T["result"]> => {
+      const context = mergeChatContextAndMessages(params);
+      return await inferChatRaw(context.messages ?? [], context);
+    };
 
-  const inferJson = async <
-    Schema extends ZodType,
-  >(
-    schema: Schema,
-    params: T["inferenceParams"],
-  ): Promise<z.infer<Schema>> => {
-    const context = mergeChatContextAndMessages({
-      ...params,
-      renderedTemplate: params.renderedTemplate + "\n" + JSON_PROMPT,
-    });
+    const inferJson = async <
+      Schema extends ZodType,
+    >(
+      schema: Schema,
+      params: T["inferenceParams"],
+    ): Promise<z.infer<Schema>> => {
+      const context = mergeChatContextAndMessages({
+        ...params,
+        renderedTemplate: params.renderedTemplate + "\n" + JSON_PROMPT,
+      });
 
-    const result = await inferChatRaw(context.messages ?? [], {
-      ...context,
-      body: {
-        ...context.body,
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "schema",
-            schema: zodToJsonSchema(schema),
-            strict: true,
+      const result = await inferChatRaw(context.messages ?? [], {
+        ...context,
+        body: {
+          ...context.body,
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              name: "schema",
+              schema: zodToJsonSchema(schema),
+              strict: true,
+            },
           },
         },
-      },
-    });
+      });
 
-    return stringToJsonSchema.pipe(schema).parse(result.message.content);
+      return stringToJsonSchema.pipe(schema).parse(result.message.content);
+    };
+
+    const respondWithChoice = () => async (params: T["inferenceParams"]) =>
+      await inferChoice(params);
+
+    const respondWithText = () => async (params: T["inferenceParams"]) =>
+      (await inferChoice(params)).message.content;
+
+    const respondWithJson =
+      <Schema extends ZodType>(schema: Schema) =>
+      (params: T["inferenceParams"]) => inferJson(schema, params);
+
+    return {
+      initChatPromptBuilder,
+      mergeChatContext,
+      mergeChatContextAndMessages,
+      inferChatRaw,
+      inferChoice,
+      inferJson,
+      respondWithChoice,
+      respondWithText,
+      respondWithJson,
+    };
   };
-
-  const respondWithChoice = () => async (params: T["inferenceParams"]) =>
-    await inferChoice(params);
-
-  const respondWithText = () => async (params: T["inferenceParams"]) =>
-    (await inferChoice(params)).message.content;
-
-  const respondWithJson =
-    <Schema extends ZodType>(schema: Schema) =>
-    (params: T["inferenceParams"]) => inferJson(schema, params);
-
-  return {
-    mergeChatContext,
-    mergeChatContextAndMessages,
-    inferChatRaw,
-    inferChoice,
-    inferJson,
-    respondWithChoice,
-    respondWithText,
-    respondWithJson,
-  };
-};
+}

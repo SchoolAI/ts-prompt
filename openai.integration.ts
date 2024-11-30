@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
 import { OpenAI } from "npm:openai@4.73.1";
-import { buildInferenceFunctionsForOpenAI } from "./openai.ts";
+import { buildChatFunctions, buildImageFunctions } from "./openai.ts";
 
 const { test } = Deno;
 
@@ -9,11 +9,14 @@ const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
 const {
   initChatPromptBuilder,
-  initImagePromptBuilder,
   respondWithText,
   respondWithJson,
+} = buildChatFunctions()(openai);
+
+const {
+  initImagePromptBuilder,
   respondWithImage,
-} = buildInferenceFunctionsForOpenAI(openai);
+} = buildImageFunctions()(openai);
 
 const buildChatPrompt = initChatPromptBuilder({
   body: { model: "gpt-4o" },

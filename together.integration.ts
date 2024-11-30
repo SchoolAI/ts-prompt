@@ -1,7 +1,7 @@
 import { assert, assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
 import { Together } from "npm:together-ai@0.10.0";
-import { buildInferenceFunctionsForTogether } from "./together.ts";
+import { buildChatFunctions, buildImageFunctions } from "./together.ts";
 
 const { test } = Deno;
 
@@ -9,11 +9,14 @@ const together = new Together({ apiKey: Deno.env.get("TOGETHER_API_KEY")! });
 
 const {
   initChatPromptBuilder,
-  initImagePromptBuilder,
   respondWithText,
   respondWithJson,
+} = buildChatFunctions()(together);
+
+const {
+  initImagePromptBuilder,
   respondWithImage,
-} = buildInferenceFunctionsForTogether(together);
+} = buildImageFunctions()(together);
 
 const buildChatPrompt = initChatPromptBuilder({
   body: { model: "Qwen/Qwen2.5-7B-Instruct-Turbo" },
