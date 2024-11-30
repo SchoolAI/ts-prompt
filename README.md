@@ -14,17 +14,13 @@ extract placeholders in the prompt template and create type consistency across t
 
 ```typescript
 import { OpenAI } from "openai";
-import type { ChatCompletionCreateParamsNonStreaming } from "openai/resources/chat/completions";
-import { initPromptbuilder, ChatRequest } from "ts-prompt";
-import { buildInferenceFunctionsForOpenAI } from "ts-prompt/openai.ts";
+import { buildChatFunctions } from "ts-prompt/openai.ts";
 
 const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! })
 
-const buildPrompt = initPromptBuilder<
-  ChatRequest<ChatCompletionCreateParamsNonStreaming>
->({ messages: [], model: 'gpt-3.5-turbo' })
+const { initChatPromptBuilder, respondWithJson, } = buildChatFunctions(openai);
 
-const { respondWithJson } = buildInferenceFunctionsForOpenAI(openai)
+const buildPrompt = initChatPromptBuilder({ messages: [], model: 'gpt-3.5-turbo' })
 
 const courseMetadataPrompt = buildPrompt({
   template: `
@@ -100,21 +96,22 @@ you need to create is a function that builds prompts, e.g. `buildPrompt` or `bui
 
 ```typescript
 import { OpenAI } from "openai";
-import type { ImageGenerateParams } from "openai/resources/images.mjs";
-import { initPromptBuilder } from "ts-prompt";
+import { buildImageFunctions } from "ts-prompt/together.ts";
 
-// Initialize OpenAI client with API key
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+// Initialize TogetherAI client with API key
+const together = new Together({ apiKey: Deno.env.get("TOGETHER_API_KEY")! });
+
+const { initImagePromptBuilder, respondWithImage } = buildImageFunctions(together);
 
 // Initialize the `buildImagePrompt` function with default configuration
-const buildImagePrompt = initPromptBuilder<ImageGenerateParams>({
-  prompt: "",
-  model: "dall-e-3",
-  size: "1024x1024",
+const buildImagePrompt = initImagePromptBuilder{
+  model: "black-forest-labs/FLUX.1-schnell",
+  width: 512,
+  height: 512,
   response_format: "url",
+  n: 1,
+  steps: 4,
 });
-
-const { respondWithImage } = buildInferenceFunctionsForOpenAI(openai);
 
 // now use `buildImagePrompt` to define a typesafe, specific image prompt:
 const generateIconPrompt = buildImagePrompt(
@@ -135,10 +132,6 @@ const images = await generateIconPrompt({
 
 You can create your own `respondWithImage` function if you want to use a different inference
 engine, or if you need special logging, tracking, retry logic, etc.
-
-Other functions specific to OpenAI, such as `respondWithJson`, `respondWithText`, etc., are
-easy to change out with your own app-specific types or logging requirements. See
-[openai.ts](openai.ts) and accompanying integration test.
 
 ## Tests
 

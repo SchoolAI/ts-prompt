@@ -99,6 +99,8 @@ test("Together: build prompt and respond with typed JSON", async () => {
 const buildImagePrompt = initImagePromptBuilder({
   body: {
     model: "black-forest-labs/FLUX.1-schnell",
+    width: 512,
+    height: 512,
     response_format: "url",
     n: 1,
     steps: 4,
