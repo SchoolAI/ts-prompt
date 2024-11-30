@@ -2,7 +2,13 @@ import type { z, ZodType } from "zod";
 import { zodResponseFormat } from "npm:openai@4.73.1/helpers/zod";
 import { JSON_PROMPT, stringToJsonSchema } from "^/json.ts";
 import { type MergeMessagesFn, mergeMessagesTop } from "^/merge.ts";
-import { type InferenceParams, initPromptBuilder } from "^/prompt.ts";
+import {
+  type InferenceFn,
+  type InferenceParams,
+  initPromptBuilder,
+  type TemplateArgs,
+} from "^/prompt.ts";
+import type { ExtractPlaceholders, IfNever } from "^/template.ts";
 
 type ChatCompletionCreateParamBody<Message> = {
   messages: Message[];
@@ -73,11 +79,11 @@ export const zodToJsonSchema = (
  * @param openai The OpenAI client. You can import and pass any version that conforms to the
  *        type expectations.
  */
-export function buildChatFunctions<
+export const buildChatFunctions: BuildChatFunctions = <
   AddCtx,
   Message = unknown,
   OpenAI extends OpenAIInterface<Message> = OpenAIInterface<Message>,
->(openai: OpenAI) {
+>(openai: OpenAI) => {
   type T = Types<Message, OpenAI, AddCtx>;
 
   const initChatPromptBuilder = initPromptBuilder<T["context"]>;
@@ -205,4 +211,86 @@ export function buildChatFunctions<
     respondWithText,
     respondWithJson,
   };
-}
+};
+
+type BuildChatFunctions = <
+  AddCtx,
+  Message = unknown,
+  OpenAI extends OpenAIInterface<Message> = OpenAIInterface<Message>,
+>(openai: OpenAI) => {
+  initChatPromptBuilder: (
+    contextFromBuilder: ChatPromptContext<Message, OpenAI, Partial<AddCtx>>,
+  ) => <
+    TemplateString extends string,
+    Infer extends InferenceFn<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>,
+      ExtractPlaceholders<TemplateString>,
+      any
+    >,
+  >(
+    template: TemplateString,
+    infer: Infer,
+    defaultRequest?:
+      | Partial<ChatPromptContext<Message, OpenAI, Partial<AddCtx>>>
+      | undefined,
+  ) => (
+    ...args: IfNever<
+      ExtractPlaceholders<TemplateString>,
+      [
+        context?:
+          | Partial<ChatPromptContext<Message, OpenAI, Partial<AddCtx>>>
+          | undefined,
+      ],
+      [
+        templateArgs: TemplateArgs<
+          ExtractPlaceholders<TemplateString>
+        >,
+        context?:
+          | Partial<ChatPromptContext<Message, OpenAI, Partial<AddCtx>>>
+          | undefined,
+      ]
+    >
+  ) => Promise<Awaited<ReturnType<Infer>>>;
+  mergeChatContext: (
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => ChatPromptContext<Message, OpenAI, Partial<AddCtx>>;
+  mergeChatContextAndMessages: (
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => ChatPromptContext<Message, OpenAI, Partial<AddCtx>>;
+  inferChatRaw: (
+    messages: Message[],
+    { body, options }: ChatPromptContext<Message, OpenAI, Partial<AddCtx>>,
+  ) => Promise<ChatCompletionCreateResult<Message, OpenAI>>;
+  inferChoice: (
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => Promise<ChatCompletionCreateResult<Message, OpenAI>>;
+  inferJson: <Schema extends ZodType>(
+    schema: Schema,
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => Promise<z.infer<Schema>>;
+  respondWithChoice: () => (
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => Promise<ChatCompletionCreateResult<Message, OpenAI>>;
+  respondWithText: () => (
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => Promise<string | null>;
+  respondWithJson: <Schema extends ZodType>(
+    schema: Schema,
+  ) => (
+    params: InferenceParams<
+      ChatPromptContext<Message, OpenAI, Partial<AddCtx>>
+    >,
+  ) => Promise<z.TypeOf<Schema>>;
+};

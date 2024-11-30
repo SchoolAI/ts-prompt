@@ -1,4 +1,10 @@
-import { type InferenceParams, initPromptBuilder } from "^/prompt.ts";
+import {
+  type InferenceFn,
+  type InferenceParams,
+  initPromptBuilder,
+  type TemplateArgs,
+} from "^/prompt.ts";
+import type { ExtractPlaceholders, IfNever } from "^/template.ts";
 
 type ImageGenerateParamBody = {
   response_format: "url" | "b64_json";
@@ -36,10 +42,10 @@ export type Types<OpenAI extends OpenAIInterface, AddCtx> = {
  * @param openai The OpenAI client. You can import and pass any version that conforms to the
  *        type expectations.
  */
-export function buildImageFunctions<
+export const buildImageFunctions: BuildImageFunctions = <
   AddCtx,
   OpenAI extends OpenAIInterface = OpenAIInterface,
->(openai: OpenAI) {
+>(openai: OpenAI) => {
   type T = Types<OpenAI, AddCtx>;
   const initImagePromptBuilder = initPromptBuilder<T["context"]>;
 
@@ -105,4 +111,58 @@ export function buildImageFunctions<
     inferImage,
     respondWithImage,
   };
-}
+};
+
+type BuildImageFunctions = <
+  AddCtx,
+  OpenAI extends OpenAIInterface = OpenAIInterface,
+>(openai: OpenAI) => {
+  initImagePromptBuilder: (
+    contextFromBuilder: ImagePromptContext<OpenAI, Partial<AddCtx>>,
+  ) => <
+    TemplateString extends string,
+    Infer extends InferenceFn<
+      ImagePromptContext<OpenAI, Partial<AddCtx>>,
+      ExtractPlaceholders<TemplateString>,
+      any
+    >,
+  >(
+    template: TemplateString,
+    infer: Infer,
+    defaultRequest?:
+      | Partial<ImagePromptContext<OpenAI, Partial<AddCtx>>>
+      | undefined,
+  ) => (
+    ...args: IfNever<
+      ExtractPlaceholders<TemplateString>,
+      [
+        context?:
+          | Partial<ImagePromptContext<OpenAI, Partial<AddCtx>>>
+          | undefined,
+      ],
+      [
+        templateArgs: TemplateArgs<
+          ExtractPlaceholders<TemplateString>
+        >,
+        context?:
+          | Partial<ImagePromptContext<OpenAI, Partial<AddCtx>>>
+          | undefined,
+      ]
+    >
+  ) => Promise<Awaited<ReturnType<Infer>>>;
+  mergeContext: (
+    params: InferenceParams<ImagePromptContext<OpenAI, Partial<AddCtx>>>,
+  ) => ImagePromptContext<OpenAI, Partial<AddCtx>>;
+  inferImageRaw: (
+    renderedTemplate: string,
+    { body, options }: ImagePromptContext<OpenAI, Partial<AddCtx>>,
+  ) => Promise<(string | undefined)[]>;
+  inferImage: (
+    params: InferenceParams<ImagePromptContext<OpenAI, Partial<AddCtx>>>,
+  ) => Promise<(string | undefined)[]>;
+  respondWithImage: (
+    format?: "url" | "b64_json",
+  ) => (
+    params: InferenceParams<ImagePromptContext<OpenAI, Partial<AddCtx>>>,
+  ) => Promise<(string | undefined)[]>;
+};
