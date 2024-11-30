@@ -2,7 +2,7 @@ import {
   type ExtractPlaceholders,
   type IfNever,
   Template,
-} from "./template.ts";
+} from "^/template.ts";
 
 export type TemplateArgs<TemplateString extends string> = {
   [key in TemplateString]: string;

@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1.0.8";
-import { type InferenceParams, initPromptBuilder } from "./prompt.ts";
+import { type InferenceParams, initPromptBuilder } from "^/prompt.ts";
 const { test } = Deno;
 
 type ModelConfig = {

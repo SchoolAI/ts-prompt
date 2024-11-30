@@ -1,4 +1,4 @@
-import { unindent } from "./unindent.ts";
+import { unindent } from "^/unindent.ts";
 
 /**
  * A utility type that finds all curly-brace placeholders within a string and returns

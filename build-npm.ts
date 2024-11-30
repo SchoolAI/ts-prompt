@@ -31,7 +31,7 @@ const options: BuildOptions = {
     lib: ["ESNext"],
   },
   testPattern: "./src/*.test.ts",
-  importMap: "./import_map.node.json",
+  importMap: "./build-npm.import-map.json",
 };
 
 await build(options);

@@ -1,8 +1,8 @@
 import { assertEquals } from "jsr:@std/assert@1.0.8";
 import { z, type ZodSchema } from "zod";
-import { type InferenceFn, initPromptBuilder } from "./prompt.ts";
-import { makeJsonTemplateString, stringToJsonSchema } from "./json.ts";
-import { mergeContext } from "./merge.ts";
+import { type InferenceFn, initPromptBuilder } from "^/prompt.ts";
+import { makeJsonTemplateString, stringToJsonSchema } from "^/json.ts";
+import { mergeContext } from "^/merge.ts";
 
 const { test } = Deno;
 

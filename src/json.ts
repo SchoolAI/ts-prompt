@@ -1,6 +1,6 @@
 import { z, type ZodType } from "zod";
 import { zodToJsonSchema } from "zod-to-json-schema";
-import { unindent } from "./unindent.ts";
+import { unindent } from "^/unindent.ts";
 
 const literalSchema: z.ZodUnion<
   [z.ZodString, z.ZodNumber, z.ZodBoolean, z.ZodNull]

@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1.0.8";
-import { combineTemplates, Template } from "./template.ts";
+import { combineTemplates, Template } from "^/template.ts";
 const { test } = Deno;
 
 test("Render a Template without placeholders", () => {

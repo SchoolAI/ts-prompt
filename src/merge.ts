@@ -1,4 +1,4 @@
-import type { InferenceParams } from "./prompt.ts";
+import type { InferenceParams } from "^/prompt.ts";
 
 /**
  * Type definition of a function capable of merging messages with a rendered template.
