@@ -20,6 +20,9 @@ const options: BuildOptions = {
   entryPoints: ["mod.ts", {
     name: "./openai",
     path: "./openai.ts",
+  }, {
+    name: "./together",
+    path: "./together.ts",
   }],
   outDir: "./npm",
   shims: { deno: true },
@@ -28,6 +31,7 @@ const options: BuildOptions = {
     lib: ["ESNext"],
   },
   testPattern: "./src/*.test.ts",
+  importMap: "./import_map.node.json",
 };
 
 await build(options);

@@ -39,7 +39,7 @@ export const mergeMessagesBottom = <Message>(
  * This function uses the "simplest" merge strategy, which is a shallow merge, preferring
  * request values over prompt values, and prompt values over builder values.
  */
-export const mergeContext = <Ctx>(params: InferenceParams<Ctx>) => {
+export const mergeContext = <Ctx>(params: InferenceParams<Ctx>): Ctx => {
   return {
     ...params.contextFromBuilder,
     ...params.contextFromPrompt,
