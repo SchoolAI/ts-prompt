@@ -20,7 +20,7 @@ const openai = new OpenAI({ apiKey: Deno.env.get('OPENAI_API_KEY')! })
 
 const { initChatPromptBuilder, respondWithJson, } = buildChatFunctions(openai);
 
-const buildPrompt = initChatPromptBuilder({ messages: [], model: 'gpt-3.5-turbo' })
+const buildPrompt = initChatPromptBuilder({ model: 'gpt-3.5-turbo' })
 
 const courseMetadataPrompt = buildPrompt({
   template: `
@@ -104,7 +104,7 @@ const together = new Together({ apiKey: Deno.env.get("TOGETHER_API_KEY")! });
 const { initImagePromptBuilder, respondWithImage } = buildImageFunctions(together);
 
 // Initialize the `buildImagePrompt` function with default configuration
-const buildImagePrompt = initImagePromptBuilder{
+const buildImagePrompt = initImagePromptBuilder({
   model: "black-forest-labs/FLUX.1-schnell",
   width: 512,
   height: 512,
