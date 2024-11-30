@@ -11,12 +11,12 @@ const {
   initChatPromptBuilder,
   respondWithText,
   respondWithJson,
-} = buildChatFunctions()(openai);
+} = buildChatFunctions(openai);
 
 const {
   initImagePromptBuilder,
   respondWithImage,
-} = buildImageFunctions()(openai);
+} = buildImageFunctions(openai);
 
 const buildChatPrompt = initChatPromptBuilder({
   body: { model: "gpt-4o" },

@@ -11,12 +11,12 @@ const {
   initChatPromptBuilder,
   respondWithText,
   respondWithJson,
-} = buildChatFunctions()(together);
+} = buildChatFunctions(together);
 
 const {
   initImagePromptBuilder,
   respondWithImage,
-} = buildImageFunctions()(together);
+} = buildImageFunctions(together);
 
 const buildChatPrompt = initChatPromptBuilder({
   body: { model: "Qwen/Qwen2.5-7B-Instruct-Turbo" },
