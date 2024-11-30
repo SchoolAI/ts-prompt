@@ -1,28 +1,26 @@
 import { assert, assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
-import { OpenAI } from "npm:openai@4.55.5";
-import type { ImageGenerateParams } from "npm:openai@4.55.5/resources/images.mjs";
-import type { ChatCompletionCreateParamsNonStreaming } from "npm:openai@4.55.5/resources/chat/completions";
-import { initPromptBuilder } from "./src/prompt.ts";
-import type { ChatRequest } from "./src/utils.ts";
+import { OpenAI } from "npm:openai@4.73.1";
 import { buildInferenceFunctionsForOpenAI } from "./openai.ts";
 
 const { test } = Deno;
 
 const openai = new OpenAI({ apiKey: Deno.env.get("OPENAI_API_KEY")! });
 
-const { respondWithImage, respondWithText, respondWithJson } =
-  buildInferenceFunctionsForOpenAI(openai);
+const {
+  initChatPromptBuilder,
+  initImagePromptBuilder,
+  respondWithText,
+  respondWithJson,
+  respondWithImage,
+} = buildInferenceFunctionsForOpenAI(openai);
 
-const buildPrompt = initPromptBuilder<
-  ChatRequest<ChatCompletionCreateParamsNonStreaming>
->({
-  messages: [],
-  model: "gpt-4o",
+const buildChatPrompt = initChatPromptBuilder({
+  body: { model: "gpt-4o" },
 });
 
 test("OpenAI: build prompt and respond with text", async () => {
-  const requestContent = buildPrompt(
+  const requestContent = buildChatPrompt(
     `
       You are a professional AI assistant for teachers. Respond in the language {{language}}.
       Be helpful and kind, and extremely concise by answering with a single word or phrase,
@@ -41,7 +39,7 @@ test("OpenAI: build prompt and respond with text", async () => {
 });
 
 test("OpenAI: build prompt and respond with typed JSON", async () => {
-  const requestJson = buildPrompt(
+  const requestJson = buildChatPrompt(
     `
       You are an educational consultant. Extract the course or lesson name, subject, duration,
       key topics, and target audience. If information is not available, do not make up details--
@@ -95,11 +93,13 @@ test("OpenAI: build prompt and respond with typed JSON", async () => {
   assert(details);
 });
 
-const buildImagePrompt = initPromptBuilder<ImageGenerateParams>({
-  prompt: "",
-  model: "dall-e-2",
-  size: "256x256",
-  response_format: "url",
+const buildImagePrompt = initImagePromptBuilder({
+  body: {
+    model: "dall-e-2",
+    size: "256x256",
+    response_format: "url",
+  },
+  options: {},
 });
 
 test("OpenAI: build image prompt and create an image", async () => {

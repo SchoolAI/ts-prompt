@@ -2,15 +2,17 @@ import { assertEquals } from "jsr:@std/assert@1.0.8";
 import { z, type ZodSchema } from "zod";
 import { type InferenceFn, initPromptBuilder } from "./prompt.ts";
 import { makeJsonTemplateString, stringToJsonSchema } from "./json.ts";
+import { mergeContext } from "./merge.ts";
+
 const { test } = Deno;
 
-type PromptRequest = {
+type PromptContext = {
   timeline: string[];
   provider: "openai";
   model: "gpt-3.5-turbo" | "gpt-4o";
 };
 
-const buildPrompt = initPromptBuilder<PromptRequest>({
+const buildPrompt = initPromptBuilder<PromptContext>({
   timeline: [],
   provider: "openai",
   model: "gpt-3.5-turbo",
@@ -22,10 +24,10 @@ const resultSchema = z.object({
   comment: z.string(),
 });
 
-const makeJsonRequest = <X, P extends string>(
+const makeJsonRequest = <Ctx, P extends string>(
   schema: ZodSchema,
-  infer: InferenceFn<X, P, string>,
-): InferenceFn<X, P, z.infer<typeof schema>> =>
+  infer: InferenceFn<Ctx, P, string>,
+): InferenceFn<Ctx, P, z.infer<typeof schema>> =>
 async (params) => {
   const renderedWithJsonInstructions = params.renderedTemplate + "\n" +
     makeJsonTemplateString(schema);
@@ -39,15 +41,15 @@ async (params) => {
 };
 
 test("createPrompt and makeJsonRequest", async () => {
-  const chatCompletion: InferenceFn<PromptRequest, string, string> = async ({
-    renderedTemplate,
-    request,
-  }) => {
-    const messages = request.timeline.length;
-    const martians = request.model.length;
-    const comment = renderedTemplate.split("\n")[0] +
+  const chatCompletion: InferenceFn<PromptContext, string, string> = async (
+    params,
+  ) => {
+    const context = mergeContext(params);
+    const messages = context.timeline.length;
+    const martians = context.model.length;
+    const comment = params.renderedTemplate.split("\n")[0] +
       "! " +
-      renderedTemplate.match(/(http.*)#/)![1];
+      params.renderedTemplate.match(/(http.*)#/)![1];
     return `{"messages": ${messages}, "martians": ${martians}, "comment": "${comment}"}`;
   };
 

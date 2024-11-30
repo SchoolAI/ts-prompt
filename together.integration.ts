@@ -1,28 +1,26 @@
-import Together from "npm:together-ai@0.10.0";
 import { assert, assertEquals } from "jsr:@std/assert@1.0.8";
 import { z } from "zod";
-import { initPromptBuilder } from "./src/prompt.ts";
-import type { ChatRequest } from "./src/utils.ts";
+import { Together } from "npm:together-ai@0.10.0";
 import { buildInferenceFunctionsForTogether } from "./together.ts";
 
 const { test } = Deno;
 
-const together = new Together({ apiKey: Deno.env.get("TOGETHER_API_KEY") });
+const together = new Together({ apiKey: Deno.env.get("TOGETHER_API_KEY")! });
 
-const { respondWithImage, respondWithText, respondWithJson } =
-  buildInferenceFunctionsForTogether(together);
+const {
+  initChatPromptBuilder,
+  initImagePromptBuilder,
+  respondWithText,
+  respondWithJson,
+  respondWithImage,
+} = buildInferenceFunctionsForTogether(together);
 
-const buildPrompt = initPromptBuilder<
-  ChatRequest<Together.CompletionCreateParamsNonStreaming>
->({
-  prompt: "",
-  messages: [],
-  model: "Qwen/Qwen2.5-7B-Instruct-Turbo",
-  // model: "Qwen/Qwen2.5-72B-Instruct-Turbo",
+const buildChatPrompt = initChatPromptBuilder({
+  body: { model: "Qwen/Qwen2.5-7B-Instruct-Turbo" },
 });
 
-test("TogetherAI: build prompt and respond with text", async () => {
-  const requestContent = buildPrompt(
+test("Together: build prompt and respond with text", async () => {
+  const requestContent = buildChatPrompt(
     `
       You are a professional AI assistant for teachers. Respond in the language {{language}}.
       Be helpful and kind, and extremely concise by answering with a single word or phrase,
@@ -40,8 +38,8 @@ test("TogetherAI: build prompt and respond with text", async () => {
   assertEquals(capital, "Paris");
 });
 
-test("TogetherAI: build prompt and respond with typed JSON", async () => {
-  const requestJson = buildPrompt(
+test("Together: build prompt and respond with typed JSON", async () => {
+  const requestJson = buildChatPrompt(
     `
       You are an educational consultant. Extract the course or lesson name, subject, duration,
       key topics, and target audience. If information is not available, do not make up details--
@@ -95,18 +93,17 @@ test("TogetherAI: build prompt and respond with typed JSON", async () => {
   assert(details);
 });
 
-type ImageRequest = Together.Images.ImageCreateParams;
-
-export const buildImagePrompt = initPromptBuilder<ImageRequest>({
-  prompt: "", // Initially blank to satisfy type
-  model: "black-forest-labs/FLUX.1-schnell",
-  width: 512,
-  height: 512,
-  n: 1,
-  steps: 4,
+const buildImagePrompt = initImagePromptBuilder({
+  body: {
+    model: "black-forest-labs/FLUX.1-schnell",
+    response_format: "url",
+    n: 1,
+    steps: 4,
+  },
+  options: {},
 });
 
-test("TogetherAI: build image prompt and create an image", async () => {
+test("Together: build image prompt and create an image", async () => {
   const imagePrompt = buildImagePrompt(
     `
     {{request}}.
@@ -123,28 +120,3 @@ test("TogetherAI: build image prompt and create an image", async () => {
 
   assertEquals(images.length, 1);
 });
-
-// export const respondWithImage = () =>
-// async (
-//   { renderedTemplate, request: _request, config }: {
-//     renderedTemplate: string;
-//     request: string;
-//     config: ImageRequest;
-//   },
-// ) =>
-//   await $getImageInference(together, renderedTemplate, {
-//     ...config,
-//   });
-
-// export const $getImageInference = async (
-//   together: Together,
-//   renderedTemplate: string,
-//   config: ImageRequest,
-// ): Promise<(string | undefined)> => {
-//   const response = await together.images.create({
-//     ...config,
-//     prompt: renderedTemplate,
-//   });
-
-//   return response.data.map((d) => d.url)[0];
-// };

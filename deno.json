@@ -19,7 +19,8 @@
   },
   "imports": {
     "zod": "npm:zod@^3.23.0",
-    "zod-to-json-schema": "npm:zod-to-json-schema@^3.23.0"
+    "zod-to-json-schema": "npm:zod-to-json-schema@^3.23.0",
+    "^/": "./src/"
   },
   "compilerOptions": {
     "lib": ["esnext", "dom", "deno.ns"]

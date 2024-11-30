@@ -1,5 +1,5 @@
 import { assertEquals } from "jsr:@std/assert@1.0.8";
-import { initPromptBuilder } from "./prompt.ts";
+import { type InferenceParams, initPromptBuilder } from "./prompt.ts";
 const { test } = Deno;
 
 type ModelConfig = {
@@ -7,17 +7,22 @@ type ModelConfig = {
   model: "gpt-3.5-turbo" | "gpt-4o";
 };
 
-type Request = {
-  value: string;
+type PromptContext = {
+  value?: string;
 } & ModelConfig;
 
-const defaultRequest: Request = {
-  value: "",
+const buildPrompt = initPromptBuilder<PromptContext>({
   provider: "openai",
   model: "gpt-3.5-turbo",
-};
+});
 
-const buildPrompt = initPromptBuilder<Request>(defaultRequest);
+const mergeContext = (params: InferenceParams<PromptContext>) => {
+  return {
+    ...params.contextFromBuilder,
+    ...params.contextFromPrompt,
+    ...params.contextFromRequest,
+  };
+};
 
 test("createPrompt without template args", async () => {
   const request = buildPrompt(`hello`, async () => null);
@@ -39,7 +44,7 @@ test("with template args", async () => {
 });
 
 test("with default prompt config", async () => {
-  const request = buildPrompt(`hello`, async ({ request }) => request, {
+  const request = buildPrompt(`hello`, async (params) => mergeContext(params), {
     model: "gpt-4o",
   });
   const result = await request({ value: "" });
@@ -53,7 +58,10 @@ test("with default prompt config", async () => {
 test("with partial config", async () => {
   const request = buildPrompt(
     `hello`,
-    async ({ request }) => `${request.provider}/${request.model}`,
+    async (params) => {
+      const context = mergeContext(params);
+      return `${context.provider}/${context.model}`;
+    },
   );
   const result = await request({
     model: "gpt-4o",
@@ -64,7 +72,10 @@ test("with partial config", async () => {
 test("with request", async () => {
   const request = buildPrompt(
     `hello`,
-    async ({ request }) => `${request.model} with ${request.value}`,
+    async (params) => {
+      const context = mergeContext(params);
+      return `${context.model} with ${context.value}`;
+    },
   );
   const result = await request({ value: "context" });
   assertEquals(result, "gpt-3.5-turbo with context");
