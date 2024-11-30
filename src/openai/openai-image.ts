@@ -11,7 +11,7 @@ type ImageGenerateParamBody = {
   prompt: string;
 };
 
-export type OpenAIInterface = {
+type OpenAIInterface = {
   images: {
     generate(
       body: ImageGenerateParamBody,
@@ -25,12 +25,15 @@ type ImagesResponse = {
   data: { b64_json?: string; url?: string }[];
 };
 
+/**
+ * The type of the context object that is passed to the prompt builder and inference functions.
+ */
 export type ImagePromptContext<OpenAI extends OpenAIInterface, AddCtx> = {
   body: Omit<Parameters<OpenAI["images"]["generate"]>[0], "prompt">;
   options: Parameters<OpenAI["images"]["generate"]>[1];
 } & AddCtx;
 
-export type Types<OpenAI extends OpenAIInterface, AddCtx> = {
+type Types<OpenAI extends OpenAIInterface, AddCtx> = {
   context: ImagePromptContext<OpenAI, Partial<AddCtx>>;
   result: (string | undefined)[];
   inferenceParams: InferenceParams<ImagePromptContext<OpenAI, Partial<AddCtx>>>;

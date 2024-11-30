@@ -4,10 +4,16 @@ import {
   Template,
 } from "^/template.ts";
 
+/**
+ * The extracted placeholder types from a template string.
+ */
 export type TemplateArgs<TemplateString extends string> = {
   [key in TemplateString]: string;
 };
 
+/**
+ * The parameters passed to an inference function.
+ */
 export type InferenceParams<Ctx, TemplateString extends string = string> = {
   templateArgs: TemplateArgs<TemplateString> | undefined;
   renderedTemplate: string;

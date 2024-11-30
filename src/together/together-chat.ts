@@ -27,7 +27,7 @@ type ChatCompletionCreateParamBody<Message> = {
   response_format?: any;
 };
 
-export type TogetherInterface<Message> = {
+type TogetherInterface<Message> = {
   chat: {
     completions: {
       create(
@@ -54,6 +54,9 @@ type ChatCompletionCreateResult<
   ReturnType<Together["chat"]["completions"]["create"]>
 >["choices"][number];
 
+/**
+ * The type of the context object that is passed to the prompt builder and inference functions.
+ */
 export type ChatPromptContext<
   Message,
   Together extends TogetherInterface<Message>,
@@ -68,7 +71,7 @@ export type ChatPromptContext<
   mergeMessages?: MergeMessagesFn<Message>;
 } & AddCtx;
 
-export type Types<
+type Types<
   Message,
   Together extends TogetherInterface<Message>,
   AddCtx,

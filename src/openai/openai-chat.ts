@@ -16,7 +16,7 @@ type ChatCompletionCreateParamBody<Message> = {
   response_format?: any;
 };
 
-export type OpenAIInterface<Message> = {
+type OpenAIInterface<Message> = {
   chat: {
     completions: {
       create(
@@ -43,6 +43,9 @@ type ChatCompletionCreateResult<
   ReturnType<OpenAI["chat"]["completions"]["create"]>
 >["choices"][number];
 
+/**
+ * The type of the context object that is passed to the prompt builder and inference functions.
+ */
 export type ChatPromptContext<
   Message,
   OpenAI extends OpenAIInterface<Message>,
@@ -57,7 +60,7 @@ export type ChatPromptContext<
   mergeMessages?: MergeMessagesFn<Message>;
 } & AddCtx;
 
-export type Types<Message, OpenAI extends OpenAIInterface<Message>, AddCtx> = {
+type Types<Message, OpenAI extends OpenAIInterface<Message>, AddCtx> = {
   context: ChatPromptContext<Message, OpenAI, Partial<AddCtx>>;
   result: ChatCompletionCreateResult<Message, OpenAI>;
   inferenceParams: InferenceParams<

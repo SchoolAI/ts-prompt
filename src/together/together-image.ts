@@ -19,7 +19,7 @@ type ImageFile = {
   }[];
 };
 
-export type TogetherInterface = {
+type TogetherInterface = {
   images: {
     create(
       body: ImageGenerateParamBody,
@@ -28,12 +28,15 @@ export type TogetherInterface = {
   };
 };
 
+/**
+ * The type of the context object that is passed to the prompt builder and inference functions.
+ */
 export type ImagePromptContext<Together extends TogetherInterface, AddCtx> = {
   body: Omit<Parameters<Together["images"]["create"]>[0], "prompt">;
   options: Parameters<Together["images"]["create"]>[1];
 } & AddCtx;
 
-export type Types<OpenAI extends TogetherInterface, AddCtx> = {
+type Types<OpenAI extends TogetherInterface, AddCtx> = {
   context: ImagePromptContext<OpenAI, AddCtx>;
   result: (string | undefined)[];
   inferenceParams: InferenceParams<ImagePromptContext<OpenAI, AddCtx>>;
