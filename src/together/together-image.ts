@@ -52,8 +52,8 @@ type Types<OpenAI extends TogetherInterface, AddCtx> = {
  *        type expectations.
  */
 export const buildImageFunctions: BuildImageFunctions = <
+  Together extends TogetherInterface,
   AddCtx,
-  Together extends TogetherInterface = TogetherInterface,
 >(together: Together) => {
   type T = Types<Together, AddCtx>;
 
@@ -127,8 +127,8 @@ export const buildImageFunctions: BuildImageFunctions = <
 };
 
 type BuildImageFunctions = <
+  Together extends TogetherInterface,
   AddCtx,
-  Together extends TogetherInterface = TogetherInterface,
 >(together: Together) => {
   initImagePromptBuilder: (
     contextFromBuilder: ImagePromptContext<Together, AddCtx>,

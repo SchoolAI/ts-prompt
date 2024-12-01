@@ -90,9 +90,9 @@ type Types<
  *        type expectations.
  */
 export const buildChatFunctions: BuildChatFunctions = <
+  Together extends TogetherInterface<Message>,
   AddCtx,
   Message = unknown,
-  Together extends TogetherInterface<Message> = TogetherInterface<Message>,
 >(together: Together) => {
   type T = Types<Message, Together, AddCtx>;
 
@@ -255,9 +255,9 @@ export const buildChatFunctions: BuildChatFunctions = <
 };
 
 type BuildChatFunctions = <
+  Together extends TogetherInterface<Message>,
   AddCtx,
   Message = unknown,
-  Together extends TogetherInterface<Message> = TogetherInterface<Message>,
 >(together: Together) => {
   initChatPromptBuilder: (
     contextFromBuilder: ChatPromptContext<Message, Together, Partial<AddCtx>>,

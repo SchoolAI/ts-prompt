@@ -46,8 +46,8 @@ type Types<OpenAI extends OpenAIInterface, AddCtx> = {
  *        type expectations.
  */
 export const buildImageFunctions: BuildImageFunctions = <
+  OpenAI extends OpenAIInterface,
   AddCtx,
-  OpenAI extends OpenAIInterface = OpenAIInterface,
 >(openai: OpenAI) => {
   type T = Types<OpenAI, AddCtx>;
   const initImagePromptBuilder = initPromptBuilder<T["context"]>;
@@ -117,8 +117,8 @@ export const buildImageFunctions: BuildImageFunctions = <
 };
 
 type BuildImageFunctions = <
+  OpenAI extends OpenAIInterface,
   AddCtx,
-  OpenAI extends OpenAIInterface = OpenAIInterface,
 >(openai: OpenAI) => {
   initImagePromptBuilder: (
     contextFromBuilder: ImagePromptContext<OpenAI, Partial<AddCtx>>,

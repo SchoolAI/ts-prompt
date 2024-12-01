@@ -15,11 +15,11 @@ const together = {
   },
 };
 
-const fns = buildImageFunctions<{ task: string }>(together);
+const fns = buildImageFunctions<typeof together, { task: string }>(together);
 
 const buildPrompt = fns.initImagePromptBuilder({
   body: { model: "gpt-4o" },
-  options: {},
+  options: undefined,
   task: "chat",
 });
 

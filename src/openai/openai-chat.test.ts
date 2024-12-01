@@ -15,7 +15,7 @@ const openai = {
   },
 };
 
-const fns = buildChatFunctions<{ task: string }>(openai);
+const fns = buildChatFunctions<typeof openai, { task: string }>(openai);
 
 const buildPrompt = fns.initChatPromptBuilder({
   body: { model: "gpt-4o" },

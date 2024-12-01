@@ -83,9 +83,9 @@ export const zodToJsonSchema = (
  *        type expectations.
  */
 export const buildChatFunctions: BuildChatFunctions = <
+  OpenAI extends OpenAIInterface<Message>,
   AddCtx,
   Message = unknown,
-  OpenAI extends OpenAIInterface<Message> = OpenAIInterface<Message>,
 >(openai: OpenAI) => {
   type T = Types<Message, OpenAI, AddCtx>;
 
@@ -217,9 +217,9 @@ export const buildChatFunctions: BuildChatFunctions = <
 };
 
 type BuildChatFunctions = <
+  OpenAI extends OpenAIInterface<Message>,
   AddCtx,
   Message = unknown,
-  OpenAI extends OpenAIInterface<Message> = OpenAIInterface<Message>,
 >(openai: OpenAI) => {
   initChatPromptBuilder: (
     contextFromBuilder: ChatPromptContext<Message, OpenAI, Partial<AddCtx>>,
