@@ -1,6 +1,6 @@
 import { assertEquals } from "jsr:@std/assert@1.0.8";
 import { buildChatFunctions } from "^/openai/openai-chat.ts";
-import { mergeContext } from "../../mod.ts";
+import { mergeContext } from "^/merge.ts";
 
 const { test } = Deno;
 

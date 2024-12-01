@@ -8,8 +8,8 @@ import type { ExtractPlaceholders, IfNever } from "^/template.ts";
 
 type ImageGenerateParamBody = {
   model: string;
-  response_format: "url" | "base64";
   prompt: string;
+  response_format?: "url" | "base64";
 };
 
 type ImageFile = {
@@ -32,14 +32,17 @@ type TogetherInterface = {
  * The type of the context object that is passed to the prompt builder and inference functions.
  */
 export type ImagePromptContext<Together extends TogetherInterface, AddCtx> = {
-  body: Omit<Parameters<Together["images"]["create"]>[0], "prompt">;
+  body: Omit<
+    Parameters<Together["images"]["create"]>[0],
+    "prompt"
+  >;
   options: Parameters<Together["images"]["create"]>[1];
 } & AddCtx;
 
 type Types<OpenAI extends TogetherInterface, AddCtx> = {
-  context: ImagePromptContext<OpenAI, AddCtx>;
+  context: ImagePromptContext<OpenAI, Partial<AddCtx>>;
   result: (string | undefined)[];
-  inferenceParams: InferenceParams<ImagePromptContext<OpenAI, AddCtx>>;
+  inferenceParams: InferenceParams<ImagePromptContext<OpenAI, Partial<AddCtx>>>;
 };
 
 /**
@@ -83,6 +86,7 @@ export const buildImageFunctions: BuildImageFunctions = <
     const response = await together.images.create({
       ...body,
       prompt: renderedTemplate,
+      response_format: body.response_format,
     }, options);
 
     switch (body.response_format) {
@@ -144,26 +148,24 @@ type BuildImageFunctions = <
       ExtractPlaceholders<TemplateString>,
       [context?: Partial<ImagePromptContext<Together, AddCtx>> | undefined],
       [
-        templateArgs: TemplateArgs<
-          ExtractPlaceholders<TemplateString>
-        >,
+        templateArgs: TemplateArgs<ExtractPlaceholders<TemplateString>>,
         context?: Partial<ImagePromptContext<Together, AddCtx>> | undefined,
       ]
     >
   ) => Promise<Awaited<ReturnType<Infer>>>;
   mergeContext: (
-    params: InferenceParams<ImagePromptContext<Together, AddCtx>>,
-  ) => ImagePromptContext<Together, AddCtx>;
+    params: InferenceParams<ImagePromptContext<Together, Partial<AddCtx>>>,
+  ) => ImagePromptContext<Together, Partial<AddCtx>>;
   inferImageRaw: (
     renderedTemplate: string,
-    { body, options }: ImagePromptContext<Together, AddCtx>,
+    { body, options }: ImagePromptContext<Together, Partial<AddCtx>>,
   ) => Promise<(string | undefined)[]>;
   inferImage: (
-    params: InferenceParams<ImagePromptContext<Together, AddCtx>>,
+    params: InferenceParams<ImagePromptContext<Together, Partial<AddCtx>>>,
   ) => Promise<(string | undefined)[]>;
   respondWithImage: (
     format?: "url" | "b64_json",
   ) => (
-    params: InferenceParams<ImagePromptContext<Together, AddCtx>>,
+    params: InferenceParams<ImagePromptContext<Together, Partial<AddCtx>>>,
   ) => Promise<(string | undefined)[]>;
 };

@@ -11,8 +11,8 @@ import {
 import type { ExtractPlaceholders, IfNever } from "^/template.ts";
 
 type ChatCompletionCreateParamBody<Message> = {
-  messages: Message[];
   model: string;
+  messages: Message[];
   response_format?: any;
 };
 

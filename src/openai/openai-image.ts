@@ -7,8 +7,8 @@ import {
 import type { ExtractPlaceholders, IfNever } from "^/template.ts";
 
 type ImageGenerateParamBody = {
-  response_format: "url" | "b64_json";
   prompt: string;
+  response_format?: "url" | "b64_json";
 };
 
 type OpenAIInterface = {
